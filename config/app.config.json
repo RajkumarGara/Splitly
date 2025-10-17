@@ -1,0 +1,9 @@
+{
+	"features": {
+		"indexedDbSync": true,
+		"analysisPage": true
+	},
+	"api": {
+		"ocrProvider": "stub"
+	}
+}

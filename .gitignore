@@ -41,6 +41,12 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Meteor local build artifacts
+.meteor/local
+
+# macOS Finder metadata
+.DS_Store
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
