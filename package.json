@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build": "meteor build ../output --directory",
-    "deploy": "meteor deploy splitly.meteorapp.com"
+    "deploy": "meteor deploy splitly.meteorapp.com",
+    "build:render": "meteor build ../build --directory --server-only && cd ../build/bundle/programs/server && npm install --production"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
