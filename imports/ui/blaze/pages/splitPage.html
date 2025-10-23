@@ -1,0 +1,202 @@
+<template name="SplitPage">
+	{{#if bill}}
+		<div class="row justify-content-center">
+			<div class="col-12 col-lg-10 col-xl-8">
+				<!-- Header -->
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<div>
+						<h2 class="mb-0">
+							{{#if bill.storeName}}
+								{{bill.storeName}} Receipt
+							{{else}}
+								Split Receipt
+							{{/if}}
+						</h2>
+					</div>
+					<button class="btn btn-outline-secondary btn-sm" id="backBtn">
+						<i class="bi bi-arrow-left"></i> Back
+					</button>
+				</div>
+
+				{{#if showHelpInfo}}
+					<div class="alert alert-info alert-dismissible fade show">
+						<strong><i class="bi bi-lightbulb-fill"></i> Tip:</strong> Add items from your receipt and they'll be split equally among all people
+						<button type="button" class="btn-close" id="hideHelpBtn"></button>
+					</div>
+				{{/if}}
+
+				{{#unless hasPeople}}
+					<div class="alert alert-warning d-flex justify-content-between align-items-center">
+						<div>
+							<i class="bi bi-exclamation-triangle-fill"></i> 
+							<strong>No people assigned to this bill!</strong> 
+							Add people to split expenses.
+						</div>
+						<button class="btn btn-sm btn-primary" id="addPeopleFromSplit">
+							<i class="bi bi-person-plus"></i> Add People
+						</button>
+					</div>
+				{{/unless}}
+
+				{{#if hasItems}}
+					<!-- Items Section -->
+					<div class="card shadow-sm mb-3">
+						<div class="card-header bg-white d-flex justify-content-between align-items-center">
+							<h5 class="mb-0">
+								<i class="bi bi-basket-fill"></i> Items 
+								<span class="badge bg-secondary">{{items.length}}</span>
+							</h5>
+							<div class="d-flex gap-2">
+								<button class="btn btn-sm btn-outline-secondary" id="toggleDeleteBtn">
+									<i class="bi bi-pencil"></i> Edit
+								</button>
+								<button class="btn btn-sm btn-primary" id="showAddFormBtn">
+									<i class="bi bi-plus-lg"></i> Add
+								</button>
+							</div>
+						</div>
+						<div class="card-body p-0">
+							{{#if showAddForm}}
+								<div class="p-3 bg-light border-bottom">
+									<div class="row g-2">
+										<div class="col-8">
+											<input type="text" class="form-control" id="newItemName" placeholder="Item name" autofocus />
+										</div>
+										<div class="col-4">
+											<div class="input-group">
+												<span class="input-group-text">$</span>
+												<input type="number" class="form-control" id="newItemPrice" placeholder="0.00" step="0.01" />
+											</div>
+										</div>
+										<div class="col-12">
+											<button class="btn btn-success w-100" id="addItemBtn">
+												<i class="bi bi-check-lg"></i> Add Item
+											</button>
+											<button class="btn btn-sm btn-link w-100" id="hideAddFormBtn">Cancel</button>
+										</div>
+									</div>
+								</div>
+							{{/if}}
+
+							<div class="items-list">
+								{{#each items}}
+									<div class="item-card p-2 border-bottom">
+										<!-- Item Header -->
+										<div class="d-flex justify-content-between align-items-center gap-2">
+											<div class="d-flex align-items-center gap-2 flex-grow-1">
+												<span class="item-number">#{{itemIndex @index}}</span>
+												<span class="fw-bold item-name">{{name}}</span>
+												<span class="item-price ms-auto">${{formatMoney price}}</span>
+											</div>
+											{{#if isEditMode}}
+												<div class="d-flex align-items-center gap-1">
+													<!-- User chips - visible only in edit mode -->
+													{{#each billUsers}}
+														<button class="btn btn-sm user-chip {{#if isUserSelected id ../id}}active{{/if}}" data-item-id="{{../id}}" data-user-id="{{id}}">
+															{{name}}
+														</button>
+													{{/each}}
+													<!-- Delete button -->
+													<button class="btn btn-sm btn-outline-danger" id="removeItem-{{id}}" data-id="{{id}}">
+														<i class="bi bi-trash"></i>
+													</button>
+												</div>
+											{{/if}}
+										</div>
+									</div>
+								{{/each}}
+							</div>
+						</div>
+					</div>
+
+					<!-- Summary Section -->
+					<div class="card shadow-sm mb-4">
+						<div class="card-header bg-success text-white">
+							<h5 class="mb-0"><i class="bi bi-calculator-fill"></i> Summary</h5>
+						</div>
+						<div class="card-body">
+							<!-- Totals Calculation -->
+							<div class="mb-3 p-3 bg-light rounded">
+								<div class="d-flex justify-content-between mb-2">
+									<span>Items Total:</span>
+									<strong>${{formatMoney bill.calculatedTotal}}</strong>
+								</div>
+								<div class="d-flex justify-content-between mb-2">
+									<span>Tax:</span>
+									<strong>${{formatMoney bill.taxAmount}}</strong>
+								</div>
+								<hr class="my-2">
+								<div class="d-flex justify-content-between">
+									<strong class="text-success">Grand Total:</strong>
+									<strong class="h5 mb-0 text-success">${{formatMoney bill.totalAmount}}</strong>
+								</div>
+							</div>
+
+							<!-- Receipt Total Validation -->
+							{{#if totalDifference}}
+								<div class="alert alert-warning mb-3">
+									<i class="bi bi-exclamation-triangle-fill"></i> 
+									<strong>Mismatch:</strong> Calculated total (${{formatMoney bill.calculatedWithTax}}) differs from receipt total by ${{totalDifference}}
+								</div>
+							{{/if}}
+
+							<!-- Per Person Breakdown -->
+							<h6 class="mb-3"><i class="bi bi-person-lines-fill"></i> Share Per Person</h6>
+							
+							<div class="table-responsive">
+								<table class="table table-bordered">
+									<thead class="table-light">
+										<tr>
+											<th>Person</th>
+											<th class="text-end">Items</th>
+											<th class="text-end">Tax</th>
+											<th class="text-end">Total</th>
+											<th class="text-center">%</th>
+										</tr>
+									</thead>
+									<tbody>
+										{{#each finalPerUserRows}}
+											<tr>
+												<td><strong>{{name}}</strong></td>
+												<td class="text-end">${{formatMoney itemsSubtotal}}</td>
+												<td class="text-end">${{formatMoney taxShare}}</td>
+												<td class="text-end"><strong class="text-success">${{formatMoney totalRounded}}</strong></td>
+												<td class="text-center"><span class="badge bg-primary">{{sharePercentageInt}}%</span></td>
+											</tr>
+										{{/each}}
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class="card-footer bg-white d-grid gap-2">
+							<button class="btn btn-success btn-lg" id="saveReceiptBtn">
+								<i class="bi bi-check-circle-fill"></i> Save Receipt
+							</button>
+							<button class="btn btn-outline-danger" id="cancelBtn">
+								<i class="bi bi-trash"></i> Discard Receipt
+							</button>
+						</div>
+					</div>
+
+				{{else}}
+					<!-- Empty State -->
+					<div class="card shadow-sm">
+						<div class="card-body text-center py-5">
+							<i class="bi bi-inbox" style="font-size: 4rem; color: #dee2e6;"></i>
+							<h5 class="mt-3">No Items Yet</h5>
+							<p class="text-muted">Add items to start splitting expenses</p>
+							<button class="btn btn-primary btn-lg" id="showAddFormBtn">
+								<i class="bi bi-plus-circle-fill"></i> Add First Item
+							</button>
+						</div>
+					</div>
+				{{/if}}
+			</div>
+		</div>
+	{{else}}
+		<div class="alert alert-danger">
+			<i class="bi bi-exclamation-triangle-fill"></i> Receipt not found.
+		</div>
+	{{/if}}
+</template>
+

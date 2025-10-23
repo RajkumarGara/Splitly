@@ -1,0 +1,94 @@
+/* Mobile-first Split Page Styles */
+
+/* Item Cards */
+.item-card {
+	transition: background-color 0.2s;
+}
+
+.item-card:hover {
+	background-color: #f8f9fa;
+}
+
+.item-number {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #6c757d;
+	min-width: 32px;
+	flex-shrink: 0;
+}
+
+.item-name {
+	flex-grow: 1;
+}
+
+.item-price {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #198754;
+	min-width: 60px;
+	text-align: right;
+	flex-shrink: 0;
+}
+
+/* Delete button wrapper - fixed width to prevent layout shift */
+.delete-button-wrapper {
+	min-width: 45px;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+/* User chips */
+.user-chip {
+	padding: 0.25rem 0.5rem;
+	font-size: 0.75rem;
+	border: 1px solid #dee2e6;
+	background-color: #f8f9fa;
+	color: #495057;
+	border-radius: 1rem;
+	transition: all 0.2s;
+	white-space: nowrap;
+}
+
+.user-chip:hover {
+	background-color: #e9ecef;
+	border-color: #adb5bd;
+}
+
+.user-chip.active {
+	background-color: #0d6efd;
+	color: white;
+	border-color: #0d6efd;
+}
+
+/* Summary Section */
+.card-header.bg-success {
+	background-color: #198754 !important;
+}
+
+/* Items List */
+.items-list {
+	max-height: none;
+}
+
+.item-card:last-child {
+	border-bottom: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+	.item-number {
+		font-size: 0.75rem;
+		min-width: 28px;
+	}
+}
+
+/* Summary Cards Per Person */
+.card.border {
+	border-color: #dee2e6 !important;
+}
+
+.card.border:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	transition: box-shadow 0.2s;
+}

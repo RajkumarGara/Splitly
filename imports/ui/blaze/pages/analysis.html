@@ -1,0 +1,82 @@
+<template name="Analysis">
+	<h2 class="mb-3">Spending Insights</h2>
+	{{#if hasData}}
+		{{#with global}}
+			<div class="row g-3 mb-3">
+				<div class="col-md-3 col-6">
+					<div class="p-3 border rounded bg-light">
+						<div class="small text-muted">Total Spent</div>
+						<div class="fw-bold h5 mb-0">${{totalSpent}}</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-6">
+					<div class="p-3 border rounded bg-light">
+						<div class="small text-muted">Items (no tax)</div>
+						<div class="fw-bold h5 mb-0">${{totalItemSpent}}</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-6">
+					<div class="p-3 border rounded bg-light">
+						<div class="small text-muted">Tax Total</div>
+						<div class="fw-bold h5 mb-0">${{taxTotal}}</div>
+					</div>
+				</div>
+				<div class="col-md-3 col-6">
+					<div class="p-3 border rounded bg-light">
+						<div class="small text-muted">Avg / Receipt</div>
+						<div class="fw-bold h5 mb-0">${{avgPerReceipt}}</div>
+					</div>
+				</div>
+			</div>
+			<div class="mb-3">
+				<div class="d-flex align-items-center mb-2">
+					<h5 class="mb-0">Per User</h5>
+					<small class="text-muted ms-2">(tax included equally)</small>
+				</div>
+				<div class="mb-2">
+					{{#each filterUsers}}
+						<button class="btn btn-sm me-2 filter-btn {{activeClass userId}}" data-id="{{userId}}">{{name}}</button>
+					{{/each}}
+					{{#if hasFilter}}<button class="btn btn-sm btn-secondary" id="clearFilter">Clear</button>{{/if}}
+				</div>
+				<ul class="list-group mb-3">
+					{{#each perUserGlobal}}
+						<li class="list-group-item py-2">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="me-3" style="min-width:120px">{{name}}</div>
+								<div class="flex-grow-1 mx-3" style="height:8px;background:#eee;border-radius:4px;">
+									<div style="width: {{barWidth}}%;height:100%;background:#0d6efd;border-radius:4px;"></div>
+								</div>
+								<div class="text-end" style="min-width:110px">
+									<span class="badge bg-dark">${{amount}}</span>
+									<span class="badge bg-secondary ms-1">{{percent}}%</span>
+								</div>
+							</div>
+						</li>
+					{{/each}}
+				</ul>
+			</div>
+			<div class="row g-4">
+				<div class="col-md-6">
+					<h5 class="mb-2">Monthly Trend</h5>
+					<ul class="list-group small">
+						{{#each monthlyBreakdown}}
+							<li class="list-group-item d-flex justify-content-between"><span>{{month}}</span><span class="fw-bold">${{total}}</span></li>
+						{{/each}}
+					</ul>
+				</div>
+				<div class="col-md-6">
+					<h5 class="mb-2">Top Items</h5>
+					<ul class="list-group small">
+						{{#each topItems}}
+							<li class="list-group-item d-flex justify-content-between"><span class="text-truncate" style="max-width:200px" title="{{name}}">{{name}}</span><span>${{total}} <span class="text-muted">×{{count}}</span></span></li>
+						{{/each}}
+					</ul>
+				</div>
+			</div>
+			<div class="mt-4 small text-muted">Receipts analyzed: {{receiptCount}}</div>
+		{{/with}}
+	{{else}}
+		<p class="text-muted">No data to analyze yet. Create bills to see insights.</p>
+	{{/if}}
+</template>

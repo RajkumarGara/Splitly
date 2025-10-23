@@ -1,0 +1,59 @@
+<template name="MainLayout">
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+		<div class="container-fluid">
+			<a class="navbar-brand" href="/">Splitly</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsplitly"><span class="navbar-toggler-icon"></span></button>
+			<div class="collapse navbar-collapse" id="navbarsplitly">
+				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+					<li class="nav-item"><a class="nav-link {{isActive '/'}}" href="/">Home</a></li>
+					<li class="nav-item"><a class="nav-link {{isActive '/history'}}" href="/history">History</a></li>
+					{{#if showAnalysis}}<li class="nav-item"><a class="nav-link {{isActive '/analysis'}}" href="/analysis">Analysis</a></li>{{/if}}
+					<li class="nav-item"><a class="nav-link {{isActive '/settings'}}" href="/settings">Settings</a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+	{{> Alerts}}
+	<div class="container pb-4">
+		{{#if notReady}}
+			<div class="text-center py-4">
+				<div class="spinner-border" role="status"><span class="visually-hidden">Loading</span></div>
+				<div class="mt-2 small text-muted">Syncing bills...</div>
+			</div>
+		{{/if}}
+		{{> Template.dynamic template=yield}}
+	</div>
+	{{> UserModal}}
+	{{> ConfirmModal}}
+</template>
+
+<template name="Alerts">
+	<div class="position-fixed top-0 end-0 p-3" style="z-index:1080;">
+		{{#each alerts}}
+			<div class="alert alert-{{typeClass}} alert-dismissible fade show" role="alert">
+				{{msg}}
+				<button type="button" class="btn-close" data-id="{{id}}"></button>
+			</div>
+		{{/each}}
+	</div>
+</template>
+
+<template name="ConfirmModal">
+	<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="mb-0" id="confirmModalMessage">Are you sure?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="confirmCancelBtn">Cancel</button>
+					<button type="button" class="btn btn-danger" id="confirmOkBtn">Yes, Proceed</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</template>

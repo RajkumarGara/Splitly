@@ -1,0 +1,53 @@
+<template name="UserModal">
+	<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="userModalLabel">Manage People</h5>
+					<button type="button" class="btn-close" id="closeUsersBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="userNameModalInput" class="form-label">Add Person</label>
+						<div class="input-group">
+							<input type="text" class="form-control" id="userNameModalInput" placeholder="Name" />
+							<button class="btn btn-primary" id="addUserModalBtn">Add</button>
+						</div>
+					</div>
+					<hr />
+					<div class="mb-2">
+						<label class="form-label fw-bold">People</label>
+					</div>
+					{{#if hasUsers}}
+						<ul class="list-group">
+							{{#each users}}
+								<li class="list-group-item d-flex justify-content-between align-items-center user-item" data-id="{{_id}}">
+									{{#if isEditing _id}}
+										<div class="input-group input-group-sm flex-grow-1 me-2">
+											<input type="text" class="form-control edit-user-input" data-id="{{_id}}" value="{{name}}" />
+											<button class="btn btn-success btn-sm save-edit-user" data-id="{{_id}}">
+												<i class="bi bi-check"></i>
+											</button>
+											<button class="btn btn-secondary btn-sm cancel-edit-user" data-id="{{_id}}">
+												<i class="bi bi-x"></i>
+											</button>
+										</div>
+									{{else}}
+										<span class="editable-name" data-id="{{_id}}" style="cursor: pointer;" title="Click to edit">{{name}}</span>
+										<button class="btn btn-sm btn-outline-danger remove-user" data-id="{{_id}}">Remove</button>
+									{{/if}}
+								</li>
+							{{/each}}
+						</ul>
+					{{else}}
+						<p class="text-muted small">No people added yet.</p>
+					{{/if}}
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" id="saveUsersBtn">Save</button>
+					<button type="button" class="btn btn-secondary" id="cancelUsersBtn" data-bs-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</template>

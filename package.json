@@ -1,0 +1,31 @@
+{
+  "name": "splitly-meteor",
+  "version": "1.0.0",
+  "description": "Offline-friendly expense splitting app built with Meteor + Blaze + Bootstrap",
+  "private": true,
+  "scripts": {
+    "start": "meteor run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build": "meteor build ../output --directory",
+    "deploy": "meteor deploy splitly.meteorapp.com"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "idb": "^7.1.1",
+    "jquery": "^3.7.1",
+    "meteor-node-stubs": "^1.2.3",
+    "tesseract.js": "^6.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
+    "eslint": "^9.38.0",
+    "eslint-plugin-react": "^7.37.5",
+    "typescript": "^5.6.3"
+  }
+}
