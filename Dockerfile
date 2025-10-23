@@ -1,5 +1,5 @@
 # Build stage
-FROM geoffreybooth/meteor-base:2.15 as builder
+FROM geoffreybooth/meteor-base:3.3.2 as builder
 
 # Set working directory
 WORKDIR /app
