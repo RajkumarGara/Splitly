@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: splitly
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: meteor build ../build --directory && cd ../build/bundle/programs/server && npm install
+    startCommand: cd ../build/bundle && PORT=$PORT MONGO_URL=$MONGO_URL ROOT_URL=$RENDER_EXTERNAL_URL node main.js
+    envVars:
+      - key: MONGO_URL
+        fromDatabase:
+          name: splitly-db
+          property: connectionString
+      - key: ROOT_URL
+        sync: false
+
+databases:
+  - name: splitly-db
+    databaseName: splitly
+    user: splitly
+    plan: free

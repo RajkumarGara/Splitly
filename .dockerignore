@@ -1,0 +1,7 @@
+node_modules
+.meteor/local
+.git
+.github
+*.log
+npm-debug.log*
+.DS_Store
