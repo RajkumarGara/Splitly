@@ -17,10 +17,12 @@ COPY . .
 RUN meteor build --directory /build --server-only --architecture os.linux.x86_64
 
 # Production stage
-FROM node:18-alpine
+FROM node:18-slim
 
 # Install runtime dependencies
-RUN apk add --no-cache bash
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy built bundle from builder
 COPY --from=builder /build/bundle /app
