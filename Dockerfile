@@ -17,12 +17,17 @@ COPY . .
 RUN meteor build --directory /build --server-only --architecture os.linux.x86_64
 
 # Production stage
-FROM node:18-slim
+FROM node:18-bullseye-slim
 
-# Install runtime dependencies
+# Install runtime dependencies with updated OpenSSL
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
+
+# Set OpenSSL configuration for better compatibility
+ENV OPENSSL_CONF=/etc/ssl/openssl.cnf
+ENV NODE_OPTIONS="--tls-min-v1.0"
 
 # Copy built bundle from builder
 COPY --from=builder /build/bundle /app
