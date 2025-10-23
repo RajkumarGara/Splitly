@@ -1,32 +1,38 @@
-# Use Node.js LTS version
-FROM node:18-alpine
-
-# Install Meteor
-RUN apk add --no-cache curl bash && \
-    curl https://install.meteor.com/ | sh
+# Build stage
+FROM geoffreybooth/meteor-base:2.15 as builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Copy the entire application
+# Copy application files
 COPY . .
 
 # Build the Meteor application
-RUN meteor build --directory /build --server-only
+RUN meteor build --directory /build --server-only --architecture os.linux.x86_64
 
-# Switch to the built bundle
-WORKDIR /build/bundle/programs/server
+# Production stage
+FROM node:18-alpine
 
-# Install production dependencies
-RUN npm install
+# Install runtime dependencies
+RUN apk add --no-cache bash
 
-# Switch back to bundle root
-WORKDIR /build/bundle
+# Copy built bundle from builder
+COPY --from=builder /build/bundle /app
 
-# Expose the port
+# Set working directory
+WORKDIR /app/programs/server
+
+# Install npm dependencies
+RUN npm install --production
+
+# Set working directory to app root
+WORKDIR /app
+
+# Set environment variables
+ENV PORT=3000
+ENV NODE_ENV=production
+
+# Expose port
 EXPOSE 3000
 
 # Start the application
