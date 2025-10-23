@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
 # Set OpenSSL configuration for better compatibility
 ENV OPENSSL_CONF=/etc/ssl/openssl.cnf
 ENV NODE_OPTIONS="--tls-min-v1.0"
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # Copy built bundle from builder
 COPY --from=builder /build/bundle /app
