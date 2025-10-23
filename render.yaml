@@ -1,11 +1,9 @@
 services:
   - type: web
     name: splitly
-    env: node
+    env: docker
     region: oregon
     plan: free
-    buildCommand: meteor build ../build --directory && cd ../build/bundle/programs/server && npm install
-    startCommand: cd ../build/bundle && PORT=$PORT MONGO_URL=$MONGO_URL ROOT_URL=$RENDER_EXTERNAL_URL node main.js
     envVars:
       - key: MONGO_URL
         fromDatabase:
@@ -13,6 +11,8 @@ services:
           property: connectionString
       - key: ROOT_URL
         sync: false
+      - key: PORT
+        value: 3000
 
 databases:
   - name: splitly-db
