@@ -6,16 +6,8 @@ services:
     plan: free
     envVars:
       - key: MONGO_URL
-        fromDatabase:
-          name: splitly-db
-          property: connectionString
+        sync: false
       - key: ROOT_URL
         value: https://splitly-ryao.onrender.com
       - key: PORT
         value: 3000
-
-databases:
-  - name: splitly-db
-    databaseName: splitly
-    user: splitly
-    plan: free
