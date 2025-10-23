@@ -4,7 +4,13 @@ FROM geoffreybooth/meteor-base:2.15 as builder
 # Set working directory
 WORKDIR /app
 
-# Copy application files
+# Copy package files first
+COPY package*.json ./
+
+# Install npm dependencies before building
+RUN meteor npm install
+
+# Copy rest of application files
 COPY . .
 
 # Build the Meteor application
