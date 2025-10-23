@@ -10,7 +10,7 @@ services:
           name: splitly-db
           property: connectionString
       - key: ROOT_URL
-        sync: false
+        value: https://splitly-ryao.onrender.com
       - key: PORT
         value: 3000
 

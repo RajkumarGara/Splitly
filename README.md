@@ -1,126 +1,83 @@
-# Splitly (Meteor Expense Splitting App)
+# Splitly
 
-Offline-friendly expense splitting app built with Meteor + Blaze + Bootstrap.
+A simple, offline-friendly expense splitting app built with Meteor, Blaze, and Bootstrap.
 
-## Features
+## 🚀 Live Demo
 
-- ✅ Create and manage expense bills with multiple users
-- ✅ Split expenses equally among selected users per item
-- ✅ Add/remove users dynamically in edit mode
-- ✅ OCR receipt scanning with Tesseract.js
-- ✅ Offline support with IndexedDB caching
-- ✅ Responsive mobile-first design
-- ✅ Real-time updates with Meteor reactivity
-- ✅ Bill history and analysis views
-- ✅ Settings management
+**App URL:** https://splitly-ryao.onrender.com
 
-## Structure (flattened root)
-```
-.meteor/                         # Meteor internal config
-package.json                     # App dependencies
-config/app.config.json           # Feature flags & provider stubs
-client/main.js                   # Client entrypoint (imports routes)
-server/main.ts                   # Server startup & publications import
-imports/
-  api/                           # Collections, models, publications, methods
-    models.ts                    # Data interfaces + computeExpenseSummary()
-    bills.ts                     # Bills collection + Meteor methods
-    publications.ts              # Meteor.publish definitions
-  infra/
-    indexedDb.ts                 # Offline cache (IndexedDB via idb)
-  startup/client/routes.js       # FlowRouter + BlazeLayout route definitions
-  ui/blaze/                      # Blaze UI layer
-    layout.{html,js}             # Main layout (navbar, alerts, spinner)
-    pages/                       # Dashboard, NewBill, History, Analysis, BillDetail, Settings
-types/ (legacy shims)            # Ambient TS shims (React removed)
-```
+> Note: Free tier sleeps after 15 minutes of inactivity. First request may take ~30 seconds to wake up.
 
-## Core Features
-| Feature | Status |
-|---------|--------|
-| Routing & Navigation (FlowRouter + Blaze) | ✅ |
-| MongoDB persistence | ✅ |
-| IndexedDB offline cache (flagged) | ✅ (basic sync) |
-| Feature flags (config + localStorage overrides) | ✅ |
-| Equal / Percent / Fixed splits (UI + logic) | ✅ (percent validates ~100%) |
-| Share editor per item | ✅ |
-| OCR stub ingestion (textarea parse) | ✅ (stub; real OCR pending) |
-| Multi-bill history + detail view | ✅ |
-| Analysis page (filter + inline bar) | ✅ (charts enhancement pending) |
-| Settings page | ✅ |
-| Alerts (success/error toasts, Blaze) | ✅ |
-| Loading indicators (initial sync / OCR) | ✅ |
+## ✨ Features
 
-## Data Model Summary
-- UserProfile: `{ id, name, contact?, preferences? }`
-- Item: `{ id, name, price, userIds[], splitType?, shares? }` where `splitType` in `equal|percent|fixed` and `shares` entries each carry `type` + `value`.
-- BillDoc: `{ _id?, createdAt, updatedAt?, users[], items[], currency? }`
-- ExpenseSummary: derived totals per user; percent shares auto-scaled if not exactly 100%; fixed remainder distributed evenly.
+- **Split Bills Easily** - Add items and split costs among multiple people
+- **Flexible Splitting** - Equal, percentage, or fixed amount splits per item
+- **OCR Receipt Scanning** - Extract items from receipts using Tesseract.js
+- **Offline Support** - Works offline with IndexedDB caching
+- **Bill History** - View and manage past bills
+- **Analysis Dashboard** - Track spending patterns
+- **Mobile Friendly** - Responsive design that works on any device
 
-## Offline Flow
-1. On initial load (subscription not ready & empty Minimongo): load cached bills from IndexedDB.
-2. When subscription becomes ready: cache latest bills back to IndexedDB.
-3. Future: diff/merge strategy & stale detection.
+## 🛠️ Tech Stack
 
-## Running
+- **Framework:** Meteor
+- **Frontend:** Blaze + Bootstrap 5
+- **Database:** MongoDB
+- **Offline Storage:** IndexedDB
+- **OCR:** Tesseract.js
+
+## 📦 Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/RajkumarGara/Splitly.git
+cd Splitly
+
 # Install dependencies
 meteor npm install
 
 # Start development server
 npm start
-# or
-meteor run
-
-# Lint code
-npm run lint
-
-# Fix lint issues automatically
-npm run lint:fix
-
-# Build for production
-npm run build
-
-# Deploy to Meteor servers (optional)
-npm run deploy
 ```
 
-Open: http://localhost:3000
+Open http://localhost:3000 in your browser.
 
-## Configuration Flags
-`config/app.config.json`
-```json
-{
-	"features": { "indexedDbSync": true, "analysisPage": true },
-	"api": { "ocrProvider": "stub" }
-}
+## 🏗️ Project Structure
+
 ```
-Disable Analysis Page by setting `analysisPage: false`.
+client/                 # Client-side entry point
+server/                 # Server-side code
+imports/
+  api/                  # Collections, methods, publications
+  ui/blaze/            # Blaze templates and components
+  infra/               # IndexedDB and infrastructure
+  startup/             # App initialization
+config/                 # Configuration files
+```
 
-Feature flags are read in Blaze templates (`layout.js`, `settings.js`) via localStorage overrides (`flag_<name>`). A refresh applies route gating changes.
+## 🚢 Deployment
 
-## Next Enhancements
-1. Real OCR (image/PDF upload + provider integration).
-2. User rename + reuse across bills; bill title field.
-3. More robust percent/fixed validation UI (visual totals meter).
-4. Advanced Analysis (pie chart, time series, multi-bill aggregates).
-5. Offline merge conflict & stale detection strategy.
-6. Tests: unit (computeExpenseSummary), methods validation, offline loader.
-7. Decide on TypeScript retention vs full JS (Blaze code uses plain JS modules; models/methods remain TS for now).
-8. Import/export (CSV), multi-currency support.
-9. Authentication & per-user ownership.
-10. Performance tuning & Lighthouse pass.
+This app is deployed on Render.com using Docker. To deploy your own instance:
 
-## Contributing Guidelines
-- Keep features incremental; one page / one method at a time.
-- Maintain data model single source (`models.ts`).
-- Add tests alongside new logic.
-- Avoid silent failures; surface errors in UI.
-- Remove temporary type shims once real types integrated.
+1. Fork this repository
+2. Sign up at [Render.com](https://render.com)
+3. Create a new Blueprint
+4. Connect your forked repository
+5. Render will automatically detect the `render.yaml` and deploy
 
-## License
-TBD (add license file if distributing publicly).
+## 📝 Scripts
 
----
-Legacy React layer removed; repository now focuses on a lean Meteor + Blaze implementation.
+```bash
+npm start          # Start development server
+npm run lint       # Check code quality
+npm run lint:fix   # Fix linting issues
+npm run build      # Build for production
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is open source and available under the MIT License.
