@@ -103,16 +103,38 @@ Meteor.methods({
 Meteor.methods({
 	async 'ocr.extract'(billId: string, text: string) {
 		check(billId, String); check(text, String);
-		console.log('ocr.extract called with billId:', billId);
-		console.log('ocr.extract text length:', text.length);
+		console.log('===== OCR EXTRACT START =====');
+		console.log('Bill ID:', billId);
+		console.log('Text length:', text.length);
+
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
+
 		const storeName = detectStoreName(text);
-		console.log('Detected store name:', storeName);
+		console.log('Detected store:', storeName);
+
 		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(text, existing.users.map((u: any) => u.id));
-		console.log('parseReceiptText returned items count:', items.length);
-		if (!items.length) { return 0; }
+
+		console.log('===== PARSING RESULTS =====');
+		console.log('Items found:', items.length);
+		console.log('Receipt total:', receiptTotal);
+		console.log('Tax:', taxAmount);
+		console.log('Total amount:', totalAmount);
+
+		if (items.length > 0) {
+			console.log('===== ITEMS EXTRACTED =====');
+			items.forEach((item, idx) => {
+				console.log(`${idx + 1}. ${item.name} - $${item.price.toFixed(2)}`);
+			});
+		}
+
+		if (!items.length) {
+			console.log('===== NO ITEMS FOUND =====');
+			return 0;
+		}
+
 		await persistParsedReceipt(billId, items, receiptTotal, taxAmount, totalAmount, storeName);
+		console.log('===== OCR EXTRACT COMPLETE =====');
 		return items.length;
 	},
 });
@@ -120,11 +142,11 @@ Meteor.methods({
 // --- OCR Parsing Helpers (modularized) ---
 function detectStoreName(text: string): string {
 	const upperText = text.toUpperCase();
-	
+
 	// Check for common store patterns (prioritize specific matches first)
 	const storePatterns = [
 		{ pattern: /COSTCO\s*WHOLESALE/i, name: 'Costco' },
-		{ pattern: /WAL[\*\s]?MART/i, name: 'Walmart' },
+		{ pattern: /WAL[*\s]?MART/i, name: 'Walmart' },
 		{ pattern: /TARGET/i, name: 'Target' },
 		{ pattern: /KROGER/i, name: 'Kroger' },
 		{ pattern: /WHOLE\s*FOODS/i, name: 'Whole Foods' },
@@ -154,105 +176,118 @@ function detectStoreName(text: string): string {
 }
 
 function parseReceiptText(text: string, userIds: string[]) {
-	console.log('parseReceiptText called, userIds:', userIds.length);
+	console.log('===== PARSE RECEIPT TEXT START =====');
+	console.log('User IDs count:', userIds.length);
+
 	const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
-	console.log('parseReceiptText lines:', lines.length);
+	console.log('Total lines:', lines.length);
+	console.log('');
+
 	const items: Item[] = [];
 	let receiptTotal: number | null = null;
 	let taxAmount = 0;
 	let totalAmount: number | null = null;
 
-	// First pass: Extract subtotal, tax, and total - more aggressive pattern matching
+	// First pass: Extract subtotal, tax, and total
+	console.log('===== PASS 1: Extract Totals =====');
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		
-		// Match SUBTOTAL with very loose patterns to handle OCR errors
-		// Handles: SUB TOTAL, SUBTOTAL, Sub Total, se dil (garbled), etc.
-		if (!receiptTotal) {
-			const subtotalMatch = line.match(/(?:SUB|se|Sub|TOTA?L?)[\s\w]*?[:\s]+.*?[$§]?(\d+[.,]\d{2})/i);
-			if (subtotalMatch && line.match(/sub|total|se.*?dil/i)) {
-				receiptTotal = parseFloat(subtotalMatch[1].replace(',', '.'));
-				console.log('Found subtotal:', receiptTotal, 'from line:', line);
+		const upperLine = line.toUpperCase();
+
+		// Match SUBTOTAL
+		if (!receiptTotal && upperLine.match(/SUB.*?TOTAL/i)) {
+			const match = line.match(/[$]?(\d+[.,]\d{2})/);
+			if (match) {
+				receiptTotal = parseFloat(match[1].replace(',', '.'));
+				console.log(`  SUBTOTAL: $${receiptTotal.toFixed(2)} from "${line}"`);
 			}
 		}
-		
-		// Match TAX with various formats
-		// Handles: TAX, TAXES, Taxes:, etc.
-		const taxMatch = line.match(/TAX(?:ES)?[:\s]+.*?[$§]?(\d+[.,]\d{2})/i);
-		if (taxMatch) {
-			taxAmount += parseFloat(taxMatch[1].replace(',', '.'));
-			console.log('Found tax:', taxMatch[1], 'from line:', line);
-		}
-		
-		// Match TOTAL (but not SUBTOTAL)
-		// Handles: TOTAL, Total, TOTA, etc.
-		if (!totalAmount) {
-			const totalMatch = line.match(/^(?!.*SUB)(?!.*se).*?(?:TOTA?L?|Total)[:\s]+.*?[$§]?(\d+[.,]\d{2})/i);
-			if (totalMatch && !line.match(/sub|se.*?dil/i)) {
-				totalAmount = parseFloat(totalMatch[1].replace(',', '.'));
-				console.log('Found total:', totalAmount, 'from line:', line);
+
+		// Match TAX
+		if (upperLine.match(/TAX/i) && !upperLine.match(/TOTAL/i)) {
+			const match = line.match(/[$]?(\d+[.,]\d{2})/);
+			if (match) {
+				const tax = parseFloat(match[1].replace(',', '.'));
+				taxAmount += tax;
+				console.log(`  TAX: $${tax.toFixed(2)} from "${line}"`);
 			}
 		}
-		
-		// Also look for patterns like "Debit $4.47" or "Change Due $0.00"
-		if (!totalAmount && line.match(/debit|paid|amount|cash/i)) {
-			const amountMatch = line.match(/[$§]?(\d+[.,]\d{2})/);
-			if (amountMatch) {
-				const amount = parseFloat(amountMatch[1].replace(',', '.'));
+
+		// Match TOTAL (not subtotal)
+		if (!totalAmount && upperLine.match(/^(?!.*SUB).*TOTAL/i)) {
+			const match = line.match(/[$]?(\d+[.,]\d{2})/);
+			if (match) {
+				totalAmount = parseFloat(match[1].replace(',', '.'));
+				console.log(`  TOTAL: $${totalAmount.toFixed(2)} from "${line}"`);
+			}
+		}
+
+		// Match payment amounts (DEBIT, VISA, etc.)
+		if (!totalAmount && upperLine.match(/DEBIT|VISA|CREDIT|PAID|AMOUNT DUE|BALANCE DUE/i)) {
+			const match = line.match(/[$]?(\d+[.,]\d{2})/);
+			if (match) {
+				const amount = parseFloat(match[1].replace(',', '.'));
 				if (amount > 0) {
 					totalAmount = amount;
-					console.log('Found total from payment line:', totalAmount, 'from line:', line);
+					console.log(`  TOTAL (from payment): $${totalAmount.toFixed(2)} from "${line}"`);
 				}
 			}
 		}
 	}
+	console.log('');
 
-	// If we didn't find subtotal/total, calculate from items after extraction
-	const shouldCalculateTotals = !receiptTotal && !totalAmount;
-
-	// Second pass: Extract items - use flexible pattern matching
+	// Second pass: Extract items
+	console.log('===== PASS 2: Extract Items =====');
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		console.log(`Line ${i}: "${line}"`);
-		
+		const upperLine = line.toUpperCase();
+
 		// Skip header/footer lines
 		if (skipLine(line)) {
-			console.log('  -> Skipped (header/footer)');
+			console.log(`  Line ${i + 1}: SKIP "${line}"`);
 			continue;
 		}
-		
+
 		// Stop at summary section
-		if (line.match(/^(SUB\s*TOTA?L?|TAX(?:ES)?|TOTA?L|BALANCE|CHANGE|VISA|CREDIT|DEBIT|CASH|CARD|APPROVED|THANK|se.*?dil)/i)) {
-			console.log('  -> Stopped at summary section');
+		if (upperLine.match(/^(SUB.*?TOTAL|TAX|TOTAL|BALANCE|CHANGE|VISA|CREDIT|DEBIT|APPROVED|THANK)/i)) {
+			console.log(`  Line ${i + 1}: STOP (summary) "${line}"`);
 			break;
 		}
 
-		// Try all extraction patterns
+		// Try to extract item
 		const extracted = tryExtractItem(line, lines, i, userIds);
 		if (extracted) {
 			items.push(extracted);
-			console.log('  -> Extracted:', extracted.name, extracted.price);
+			console.log(`  Line ${i + 1}: FOUND "${extracted.name}" $${extracted.price.toFixed(2)}`);
+		} else {
+			console.log(`  Line ${i + 1}: SKIP (no match) "${line}"`);
 		}
 	}
+	console.log('');
 
-	// Calculate totals from items if not found in receipt
-	if (shouldCalculateTotals && items.length > 0) {
-		receiptTotal = parseFloat(items.reduce((sum, item) => sum + item.price, 0).toFixed(2));
-		totalAmount = receiptTotal + taxAmount;
-		console.log('Calculated totals from items - subtotal:', receiptTotal, 'total:', totalAmount);
+	// Calculate totals from items if not found
+	if ((!receiptTotal || !totalAmount) && items.length > 0) {
+		receiptTotal = receiptTotal || parseFloat(items.reduce((sum, item) => sum + item.price, 0).toFixed(2));
+		totalAmount = totalAmount || receiptTotal + taxAmount;
+		console.log('Calculated totals from items');
+		console.log(`  Subtotal: $${receiptTotal.toFixed(2)}`);
+		console.log(`  Total: $${totalAmount.toFixed(2)}`);
 	}
-	
-	console.log('parseReceiptText finished, total items found:', items.length);
+
+	console.log('===== PARSE RECEIPT TEXT END =====');
+	console.log(`Result: ${items.length} items extracted`);
+	console.log('');
+
 	return { items, receiptTotal, taxAmount, totalAmount };
 }
 
 function skipLine(line: string) {
 	return !!(
 		line.match(/^(ST#|OP#|TE#|TR#|TC#|EAN|UPC|STORE|CASHIER|CUSTOMER|REG|INVOICE|RRN|SALE|SELF-CHECKOUT|CV Member|Seq|App#|Tran ID|PID|AID|TVR|TSI)/i) ||
-		line.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/) || // dates
+		line.match(/^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/) || // dates
 		line.match(/^\d{2}:\d{2}/) || // times
 		line.match(/^[\d\s:]+$/) || // only digits and spaces
-		line.match(/^[\|\-\*=_]+$/) || // separators
+		line.match(/^[|\-*=_]+$/) || // separators
 		line.match(/^[A-Z]{1,3}:\s*$/) || // single letters with colon
 		line.match(/^\d{10,}$/) || // long number strings (barcodes, IDs)
 		line.match(/^(DISCOVER|AID|TVR|TSI|APPROVED|Entry Method|FTFM|Resp:|AMOUNT|CHANGE|Visa)/i) || // payment info
@@ -271,7 +306,7 @@ function tryExtractItem(line: string, lines: string[], index: number, userIds: s
 	// Format 6: NAME  1  $1.48 N (with quantity)
 	// Format 7: 1892398 SMOOTHIES  16.99 (Costco - code + name + price)
 	// Format 8: 2 @ 3.99           5.89 (quantity @ unit price = total)
-	
+
 	// Extract all numbers that could be prices from the line
 	const pricePatterns = [
 		// Pattern 1: Dollar sign prices with space or decimal: $1 48, $0.33, §2
@@ -299,7 +334,7 @@ function tryExtractItem(line: string, lines: string[], index: number, userIds: s
 				// Decimal format
 				price = parseFloat(match[1] + '.' + match[2]);
 			}
-			
+
 			// Validate price range
 			if (price > 0.10 && price < 2000) {
 				const matchIndex = match.index || 0;
@@ -320,11 +355,11 @@ function tryExtractItem(line: string, lines: string[], index: number, userIds: s
 	// Extract item name (everything before the price)
 	const pricePosition = priceIndex;
 	let name = line.substring(0, pricePosition).trim();
-	
+
 	// Clean up the name
 	name = name
 		.replace(/^E\s+/, '') // Remove leading 'E' (Costco item marker)
-		.replace(/^[0-9\/\s]+/, '') // Remove leading numbers/codes/quantity
+		.replace(/^[0-9/\s]+/, '') // Remove leading numbers/codes/quantity
 		.replace(/\s+@.*$/, '') // Remove @ price per unit
 		.replace(/\s{2,}/g, ' ') // Normalize spaces
 		.replace(/^[A-Z]$/, '') // Remove single letter
@@ -356,7 +391,7 @@ function tryExtractItem(line: string, lines: string[], index: number, userIds: s
 		name: cleanName(name),
 		price: foundPrice,
 		userIds,
-		splitType: 'equal'
+		splitType: 'equal',
 	};
 }
 
@@ -368,7 +403,7 @@ function pushItem(items: Item[], name: string, price: number, userIds: string[])
 	}
 }
 
-function tryMultiLineItem(lines: string[], i: number, items: Item[], userIds: string[]) {
+function _tryMultiLineItem(lines: string[], i: number, items: Item[], userIds: string[]) {
 	const line = lines[i];
 	const isItemName = line.match(/^[A-Z][A-Z\s\d&\-']{2,}$/);
 	if (!isItemName) { return false; }
@@ -394,7 +429,7 @@ function tryMultiLineItem(lines: string[], i: number, items: Item[], userIds: st
 	return false;
 }
 
-function tryPatternSingleLine(line: string, items: Item[], userIds: string[]) {
+function _tryDollarSignPrice(line: string, items: Item[], userIds: string[]) {
 	let match = line.match(/^([A-Z][A-Z\s\d&]{2,40}?)\s+(\d{12,})\s+[A-Z]\s+(\d+\.?\d{1,2})$/);
 	if (match) { pushItem(items, cleanName(match[1]), parseFloat(match[3]), userIds); return true; }
 	match = line.match(/^([A-Z][A-Z\s\d&]{2,40}?)\s+(\d{12,})\s+(\d+\.?\d{1,2})$/);
@@ -402,7 +437,7 @@ function tryPatternSingleLine(line: string, items: Item[], userIds: string[]) {
 	return false;
 }
 
-function tryWeightLine(line: string, lines: string[], i: number, items: Item[], userIds: string[]) {
+function _tryWeightLine(line: string, lines: string[], i: number, items: Item[], userIds: string[]) {
 	const match = line.match(/^(\d+\.\d+\s+l?1?b\s+@.+?)\s+(\d+\.?\d{1,2})$/i);
 	if (!match) { return false; }
 	const price = parseFloat(match[2]);
@@ -413,14 +448,14 @@ function tryWeightLine(line: string, lines: string[], i: number, items: Item[], 
 	return true;
 }
 
-function trySimpleFormat(line: string, items: Item[], userIds: string[]) {
+function _trySimpleFormat(line: string, items: Item[], userIds: string[]) {
 	const match = line.match(/^([A-Z][A-Z\s&\-']{2,40}?)\s{2,}(\d+\.?\d{1,2})$/);
 	if (!match) { return false; }
 	pushItem(items, match[1].trim(), parseFloat(match[2]), userIds);
 	return true;
 }
 
-function tryPriceAtEnd(line: string, items: Item[], userIds: string[]) {
+function _tryPriceAtEnd(line: string, items: Item[], userIds: string[]) {
 	const match = line.match(/^([A-Z][A-Z\s&\-']{2,40}?)\s+(\d+\.?\d{1,2})$/);
 	if (!match) { return false; }
 	const name = match[1].trim();
@@ -431,7 +466,7 @@ function tryPriceAtEnd(line: string, items: Item[], userIds: string[]) {
 	return true;
 }
 
-function tryDollarSignPrice(line: string, items: Item[], userIds: string[]) {
+function _tryDollarSignPriceVariant(line: string, items: Item[], userIds: string[]) {
 	// Match lines like "RUITS & VEGE $1 48 N" or "LINTRO ! $0.33 N" or "AMOSA 2 §2 N"
 	// Handle both $X.XX and $X XX (space instead of decimal) and §X variants
 	const match = line.match(/^([A-Z][A-Z\s&\-'!]{2,40}?)\s+[$§](\d+)[.\s](\d{2})\s+[A-Z]?$/i);
@@ -467,12 +502,12 @@ function cleanName(raw: string) {
 	name = name.replace(/\s+[$§]\s*$/, ''); // Remove trailing $ or §
 	name = name.replace(/\s{2,}/g, ' '); // Normalize spaces
 	name = name.replace(/\s+[A-Z]$/, ''); // Remove single letter at end (like "N")
-	
+
 	// Fix common OCR errors in item names
 	name = name.replace(/^ruts/i, 'Fruits'); // "ruts" -> "Fruits"
 	name = name.replace(/^1intro/i, 'Intro'); // "1intro" -> "Intro"
 	name = name.replace(/whosa/i, 'Samosa'); // "whosa" -> "Samosa"
-	
+
 	return name.trim();
 }
 

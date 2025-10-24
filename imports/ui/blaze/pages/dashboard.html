@@ -1,73 +1,57 @@
 <template name="Dashboard">
 	<div class="row justify-content-center">
-		<div class="col-12 col-md-8 col-lg-6">
-			<h2 class="mb-4 text-center">Split Bills & Expenses</h2>
-			
-			{{#if showHelpInfo}}
-				<div class="alert alert-info alert-dismissible fade show">
-					<h5><i class="bi bi-info-circle"></i> Welcome to Splitly!</h5>
-					<p class="mb-0">Scan receipts with your camera or upload images to automatically extract items and split expenses with friends.</p>
-					<button type="button" class="btn-close" id="hideHelpBtn"></button>
-				</div>
-			{{/if}}
-			
-			<div class="card shadow-sm mb-4">
-				<div class="card-body p-4">
-					<div class="d-grid gap-3">
-						<button class="btn btn-primary btn-lg" id="scanBillBtn" data-processing="{{ocrProcessing}}">
-							<i class="bi bi-camera"></i> Scan Receipt
-						</button>
-						<button class="btn btn-outline-primary btn-lg" id="uploadReceiptBtn" data-processing="{{ocrProcessing}}">
-							<i class="bi bi-upload"></i> Upload Image
-						</button>
-						<button class="btn btn-outline-secondary" id="addPeopleBtn">
-							<i class="bi bi-people-fill"></i> Manage People
-						</button>
-					</div>
-				</div>
+		<div class="col-12 col-md-10 col-lg-8">
+			<!-- Header Section -->
+			<div class="text-center mb-4 pt-2">
+				<h2 class="fw-bold mb-2">Split Bills</h2>
 			</div>
-			
-			<input type="file" id="receiptFileInput" accept="image/*" style="display:none;">
-			
-			{{#if ocrProcessing}}
-				<div class="alert alert-info d-flex align-items-center">
-					<div class="spinner-border spinner-border-sm me-2"></div>
-					<span>Processing receipt...</span>
+
+			<!-- Action Buttons -->
+			<div class="action-buttons-card">
+				<div class="action-buttons-grid">
+					<button type="button" class="action-button" id="scanReceiptBtn" data-processing="{{ocrProcessing}}">
+						<div class="action-icon">
+							<i class="bi bi-camera"></i>
+						</div>
+						<span class="action-label">Scan Receipt</span>
+					</button>
+
+					<button type="button" class="action-button" id="uploadReceiptBtn" data-processing="{{ocrProcessing}}">
+						<div class="action-icon">
+							<i class="bi bi-upload"></i>
+						</div>
+						<span class="action-label">Upload Image</span>
+					</button>
 				</div>
-			{{/if}}
-			
-			{{#if cameraActive}}
-				<div class="card shadow-sm mb-4">
-					<div class="card-body">
-						{{#if capturedImage}}
-							<img src="{{capturedImage}}" class="img-fluid rounded mb-3" alt="Captured receipt">
-							{{#if ocrRunning}}
-								<div class="progress mb-3" style="height: 25px;">
-									<div class="progress-bar progress-bar-striped progress-bar-animated" style="width:{{ocrProgress}}%">{{ocrProgress}}%</div>
-								</div>
-								<p class="text-center text-muted"><i class="bi bi-hourglass-split"></i> Reading receipt...</p>
-							{{else}}
-								<div class="d-grid gap-2">
-									<button class="btn btn-success" id="continueOcrBtn"><i class="bi bi-check-circle"></i> Continue</button>
-									<button class="btn btn-outline-secondary" id="retakeBtn"><i class="bi bi-arrow-clockwise"></i> Retake</button>
-									<button class="btn btn-outline-danger" id="cancelCaptureBtn"><i class="bi bi-x-circle"></i> Cancel</button>
-								</div>
-							{{/if}}
-						{{else}}
-							<video id="receiptVideo" autoplay playsinline class="w-100 rounded mb-3"></video>
-							<div class="d-grid gap-2">
-								<button class="btn btn-success btn-lg" id="captureFrameBtn"><i class="bi bi-camera-fill"></i> Capture</button>
-								<button class="btn btn-outline-danger" id="cancelCaptureBtn"><i class="bi bi-x-circle"></i> Cancel</button>
-							</div>
-						{{/if}}
+
+				<button class="manage-people-btn" id="addPeopleBtn">
+					<i class="bi bi-people-fill"></i>
+					<span>Manage People</span>
+				</button>
+			</div>
+
+			<input type="file" id="scanFileInput" accept="image/*" capture="environment" class="file-input-hidden">
+			<input type="file" id="receiptFileInput" accept="image/*" class="file-input-hidden">
+
+			{{#if ocrProcessing}}
+				<div class="alert alert-info mb-4">
+					<div class="d-flex align-items-center mb-2">
+						<div class="spinner-border spinner-border-sm me-3"></div>
+						<span>Processing receipt...</span>
+					</div>
+					<div class="progress" style="height: 24px;">
+						<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-purple" role="progressbar" style="width: {{ocrProgress}}%" aria-valuenow="{{ocrProgress}}" aria-valuemin="0" aria-valuemax="100">
+							{{ocrProgress}}%
+						</div>
 					</div>
 				</div>
 			{{/if}}
-			
+
 			{{#if hasRecentBills}}
-				<div class="card shadow-sm">
-					<div class="card-header bg-white">
+				<div class="card shadow-sm card-spacing-top">
+					<div class="card-header bg-white d-flex justify-content-between align-items-center">
 						<h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Bills</h5>
+						<a href="/history" class="btn btn-sm btn-outline-primary">View All</a>
 					</div>
 					<div class="list-group list-group-flush">
 						{{#each recentBills}}
@@ -77,26 +61,27 @@
 										{{#if storeName}}
 											<h6 class="mb-1"><i class="bi bi-shop"></i> {{storeName}}</h6>
 										{{/if}}
-										<h6 class="mb-1 text-success fw-bold">${{total}}</h6>
+										<div class="h5 mb-1 text-success">${{total}}</div>
 										<small class="text-muted"><i class="bi bi-calendar3"></i> {{createdAt}}</small>
 									</div>
 									<div class="text-end">
-										<small class="text-muted d-block"><i class="bi bi-basket"></i> {{itemCount}} items</small>
-										<small class="text-muted d-block"><i class="bi bi-people"></i> {{userCount}} people</small>
+										<div class="badge bg-light text-dark mb-1">
+											<i class="bi bi-basket"></i> {{itemCount}} items
+										</div>
+										<div class="badge bg-light text-dark">
+											<i class="bi bi-people"></i> {{userCount}} people
+										</div>
 									</div>
 								</div>
 							</a>
 						{{/each}}
 					</div>
-					<div class="card-footer bg-white text-center">
-						<a href="/history" class="btn btn-sm btn-link">View All Bills <i class="bi bi-arrow-right"></i></a>
-					</div>
 				</div>
 			{{else}}
-				<div class="card shadow-sm text-center py-5">
+				<div class="card shadow-sm text-center py-5 card-spacing-top">
 					<div class="card-body">
-						<i class="bi bi-receipt" style="font-size: 4rem; color: #dee2e6;"></i>
-						<p class="text-muted mt-3 mb-0">No bills yet. Scan or upload your first receipt to get started!</p>
+						<i class="bi bi-receipt empty-state-icon"></i>
+						<h5 class="mt-3 mb-2">No Bills Yet</h5>
 					</div>
 				</div>
 			{{/if}}

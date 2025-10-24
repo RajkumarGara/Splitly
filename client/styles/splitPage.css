@@ -24,7 +24,7 @@
 .item-price {
 	font-size: 0.95rem;
 	font-weight: 600;
-	color: #198754;
+	color: #6366f1;
 	min-width: 60px;
 	text-align: right;
 	flex-shrink: 0;
@@ -56,14 +56,10 @@
 }
 
 .user-chip.active {
-	background-color: #0d6efd;
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 	color: white;
-	border-color: #0d6efd;
-}
-
-/* Summary Section */
-.card-header.bg-success {
-	background-color: #198754 !important;
+	border-color: #6366f1;
+	box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
 /* Items List */

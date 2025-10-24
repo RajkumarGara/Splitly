@@ -1,23 +1,15 @@
 <template name="SplitPage">
-	{{#if bill}}
+	{{#if isLoading}}
+		<div class="text-center py-5">
+			<div class="spinner-border text-purple" role="status">
+				<span class="visually-hidden">Loading...</span>
+			</div>
+			<p class="text-muted mt-3">Loading receipt...</p>
+		</div>
+	{{else}}
+		{{#if bill}}
 		<div class="row justify-content-center">
 			<div class="col-12 col-lg-10 col-xl-8">
-				<!-- Header -->
-				<div class="d-flex justify-content-between align-items-center mb-3">
-					<div>
-						<h2 class="mb-0">
-							{{#if bill.storeName}}
-								{{bill.storeName}} Receipt
-							{{else}}
-								Split Receipt
-							{{/if}}
-						</h2>
-					</div>
-					<button class="btn btn-outline-secondary btn-sm" id="backBtn">
-						<i class="bi bi-arrow-left"></i> Back
-					</button>
-				</div>
-
 				{{#if showHelpInfo}}
 					<div class="alert alert-info alert-dismissible fade show">
 						<strong><i class="bi bi-lightbulb-fill"></i> Tip:</strong> Add items from your receipt and they'll be split equally among all people
@@ -32,7 +24,7 @@
 							<strong>No people assigned to this bill!</strong> 
 							Add people to split expenses.
 						</div>
-						<button class="btn btn-sm btn-primary" id="addPeopleFromSplit">
+						<button class="btn btn-sm btn-purple" id="addPeopleFromSplit">
 							<i class="bi bi-person-plus"></i> Add People
 						</button>
 					</div>
@@ -41,17 +33,24 @@
 				{{#if hasItems}}
 					<!-- Items Section -->
 					<div class="card shadow-sm mb-3">
-						<div class="card-header bg-white d-flex justify-content-between align-items-center">
+						<div class="card-header bg-light d-flex justify-content-between align-items-center">
 							<h5 class="mb-0">
-								<i class="bi bi-basket-fill"></i> Items 
-								<span class="badge bg-secondary">{{items.length}}</span>
+								{{#if bill.storeName}}
+									{{bill.storeName}}
+								{{else}}
+									Items
+								{{/if}}
+								<small class="text-muted ms-2">({{items.length}})</small>
 							</h5>
 							<div class="d-flex gap-2">
-								<button class="btn btn-sm btn-outline-secondary" id="toggleDeleteBtn">
-									<i class="bi bi-pencil"></i> Edit
+								<button class="btn btn-sm btn-outline-primary" id="showAddFormBtn">
+									<i class="bi bi-plus-lg"></i>
 								</button>
-								<button class="btn btn-sm btn-primary" id="showAddFormBtn">
-									<i class="bi bi-plus-lg"></i> Add
+								<button class="btn btn-sm {{#if showSplitMode}}btn-purple{{else}}btn-outline-purple{{/if}}" id="toggleSplitBtn">
+									<i class="bi bi-person-check"></i>
+								</button>
+								<button class="btn btn-sm {{#if showDeleteButtons}}btn-danger{{else}}btn-outline-danger{{/if}}" id="toggleDeleteBtn">
+									<i class="bi bi-trash"></i>
 								</button>
 							</div>
 						</div>
@@ -69,10 +68,12 @@
 											</div>
 										</div>
 										<div class="col-12">
-											<button class="btn btn-success w-100" id="addItemBtn">
-												<i class="bi bi-check-lg"></i> Add Item
-											</button>
-											<button class="btn btn-sm btn-link w-100" id="hideAddFormBtn">Cancel</button>
+											<div class="d-flex gap-2">
+												<button class="btn btn-purple flex-fill" id="addItemBtn">
+													<i class="bi bi-check-lg"></i> Add Item
+												</button>
+												<button class="btn btn-outline-secondary flex-fill" id="hideAddFormBtn">Cancel</button>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -88,19 +89,21 @@
 												<span class="fw-bold item-name">{{name}}</span>
 												<span class="item-price ms-auto">${{formatMoney price}}</span>
 											</div>
-											{{#if isEditMode}}
+											{{#if showSplitMode}}
 												<div class="d-flex align-items-center gap-1">
-													<!-- User chips - visible only in edit mode -->
+													<!-- User chips - visible only in split mode -->
 													{{#each billUsers}}
 														<button class="btn btn-sm user-chip {{#if isUserSelected id ../id}}active{{/if}}" data-item-id="{{../id}}" data-user-id="{{id}}">
 															{{name}}
 														</button>
 													{{/each}}
-													<!-- Delete button -->
-													<button class="btn btn-sm btn-outline-danger" id="removeItem-{{id}}" data-id="{{id}}">
-														<i class="bi bi-trash"></i>
-													</button>
 												</div>
+											{{/if}}
+											{{#if showDeleteButtons}}
+												<!-- Delete button - visible only in delete mode -->
+												<button class="btn btn-sm btn-outline-danger" id="removeItem-{{id}}" data-id="{{id}}">
+													<i class="bi bi-trash"></i>
+												</button>
 											{{/if}}
 										</div>
 									</div>
@@ -111,12 +114,12 @@
 
 					<!-- Summary Section -->
 					<div class="card shadow-sm mb-4">
-						<div class="card-header bg-success text-white">
+						<div class="card-header bg-gradient-purple text-white">
 							<h5 class="mb-0"><i class="bi bi-calculator-fill"></i> Summary</h5>
 						</div>
 						<div class="card-body">
 							<!-- Totals Calculation -->
-							<div class="mb-3 p-3 bg-light rounded">
+							<div class="mb-3">
 								<div class="d-flex justify-content-between mb-2">
 									<span>Items Total:</span>
 									<strong>${{formatMoney bill.calculatedTotal}}</strong>
@@ -127,8 +130,8 @@
 								</div>
 								<hr class="my-2">
 								<div class="d-flex justify-content-between">
-									<strong class="text-success">Grand Total:</strong>
-									<strong class="h5 mb-0 text-success">${{formatMoney bill.totalAmount}}</strong>
+									<strong class="text-purple">Grand Total:</strong>
+									<strong class="h5 mb-0 text-purple">${{formatMoney bill.totalAmount}}</strong>
 								</div>
 							</div>
 
@@ -147,34 +150,34 @@
 								<table class="table table-bordered">
 									<thead class="table-light">
 										<tr>
-											<th>Person</th>
-											<th class="text-end">Items</th>
-											<th class="text-end">Tax</th>
-											<th class="text-end">Total</th>
-											<th class="text-center">%</th>
+											<th class="text-center">Person</th>
+											<th class="text-center">Items</th>
+											<th class="text-center">Tax</th>
+											<th class="text-center">Total</th>
 										</tr>
 									</thead>
 									<tbody>
 										{{#each finalPerUserRows}}
 											<tr>
-												<td><strong>{{name}}</strong></td>
-												<td class="text-end">${{formatMoney itemsSubtotal}}</td>
-												<td class="text-end">${{formatMoney taxShare}}</td>
-												<td class="text-end"><strong class="text-success">${{formatMoney totalRounded}}</strong></td>
-												<td class="text-center"><span class="badge bg-primary">{{sharePercentageInt}}%</span></td>
+												<td class="text-center"><strong>{{name}}</strong></td>
+												<td class="text-center">${{formatMoney itemsSubtotal}}</td>
+												<td class="text-center">${{formatMoney taxShare}}</td>
+												<td class="text-center"><strong class="text-purple">${{formatMoney totalRounded}}</strong></td>
 											</tr>
 										{{/each}}
 									</tbody>
 								</table>
 							</div>
 						</div>
-						<div class="card-footer bg-white d-grid gap-2">
-							<button class="btn btn-success btn-lg" id="saveReceiptBtn">
-								<i class="bi bi-check-circle-fill"></i> Save Receipt
-							</button>
-							<button class="btn btn-outline-danger" id="cancelBtn">
-								<i class="bi bi-trash"></i> Discard Receipt
-							</button>
+						<div class="card-footer bg-white">
+							<div class="d-flex gap-2">
+								<button class="btn btn-outline-success flex-fill" id="saveReceiptBtn">
+									<i class="bi bi-check-circle"></i> Save
+								</button>
+								<button class="btn btn-outline-danger flex-fill" id="cancelBtn">
+									<i class="bi bi-trash"></i> Discard
+								</button>
+							</div>
 						</div>
 					</div>
 
@@ -182,10 +185,10 @@
 					<!-- Empty State -->
 					<div class="card shadow-sm">
 						<div class="card-body text-center py-5">
-							<i class="bi bi-inbox" style="font-size: 4rem; color: #dee2e6;"></i>
+							<i class="bi bi-inbox empty-state-icon"></i>
 							<h5 class="mt-3">No Items Yet</h5>
 							<p class="text-muted">Add items to start splitting expenses</p>
-							<button class="btn btn-primary btn-lg" id="showAddFormBtn">
+							<button class="btn btn-purple btn-lg" id="showAddFormBtn">
 								<i class="bi bi-plus-circle-fill"></i> Add First Item
 							</button>
 						</div>
@@ -193,10 +196,11 @@
 				{{/if}}
 			</div>
 		</div>
-	{{else}}
-		<div class="alert alert-danger">
-			<i class="bi bi-exclamation-triangle-fill"></i> Receipt not found.
-		</div>
+		{{else}}
+			<div class="alert alert-danger">
+				<i class="bi bi-exclamation-triangle-fill"></i> Receipt not found.
+			</div>
+		{{/if}}
 	{{/if}}
 </template>
 

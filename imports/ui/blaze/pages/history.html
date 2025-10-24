@@ -20,7 +20,7 @@
 			<table class="table table-striped table-hover">
 				<thead>
 					<tr>
-						<th style="width: 40px;">
+						<th class="table-checkbox-col">
 							<input type="checkbox" class="form-check-input" id="selectAllCheckbox" data-check-all="true">
 						</th>
 						<th>Store</th>
@@ -28,7 +28,7 @@
 						<th>Total</th>
 						<th>Items</th>
 						<th>People</th>
-						<th style="width: 100px;">Actions</th>
+						<th class="table-actions-col">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -76,7 +76,7 @@
 		</div>
 	{{else}}
 		<div class="text-center py-5">
-			<i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+			<i class="bi bi-inbox empty-state-icon-muted"></i>
 			<p class="text-muted mt-3">No receipts yet. Scan or upload a receipt to get started!</p>
 			<a href="/" class="btn btn-primary">
 				<i class="bi bi-plus-circle"></i> Add Receipt

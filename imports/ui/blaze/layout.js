@@ -43,7 +43,8 @@ export function showConfirm(message, options = {}) {
 		confirmResolver = resolve;
 		const msgEl = document.getElementById('confirmModalMessage');
 		if (msgEl) {
-			msgEl.textContent = message;
+			// Convert line breaks to <br> for proper HTML rendering
+			msgEl.innerHTML = message.replace(/\n/g, '<br>');
 		}
 		const okBtn = document.getElementById('confirmOkBtn');
 		if (okBtn) {
@@ -116,6 +117,11 @@ Template.MainLayout.onCreated(function () {
 
 Template.MainLayout.helpers({
 	notReady() {
+		// Don't show layout spinner on split page - it has its own loading state
+		const currentPath = FlowRouter.current().path;
+		if (currentPath.startsWith('/split/')) {
+			return false;
+		}
 		return !Template.instance().subHandle.ready();
 	},
 	isActive(path) {

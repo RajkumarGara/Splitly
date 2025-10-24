@@ -1,0 +1,152 @@
+/* Global Styles for Splitly App */
+
+/* ===== Purple Theme Colors ===== */
+:root {
+	--purple-primary: #6366f1;
+	--purple-secondary: #8b5cf6;
+	--purple-dark: #5046e5;
+	--purple-light: #a78bfa;
+}
+
+/* ===== Navigation Bar ===== */
+.navbar-purple {
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+/* ===== Purple Buttons ===== */
+.btn-purple {
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	color: white;
+	border: none;
+	transition: all 0.3s ease;
+}
+
+.btn-purple:hover {
+	background: linear-gradient(135deg, #5046e5 0%, #7c3aed 100%);
+	color: white;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-purple:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.btn-outline-purple {
+	color: #6366f1 !important;
+	border-color: #6366f1 !important;
+	background-color: transparent !important;
+}
+
+.btn-outline-purple:hover {
+	color: white !important;
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+	border-color: #6366f1 !important;
+}
+
+/* ===== Purple Badges ===== */
+.badge.bg-purple {
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	color: white;
+}
+
+/* ===== Purple Text ===== */
+.text-purple {
+	color: #6366f1 !important;
+}
+
+/* ===== Purple Card Headers ===== */
+.bg-gradient-purple {
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	color: white;
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar-purple {
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* ===== Spinner ===== */
+.spinner-border.text-purple {
+	color: #6366f1 !important;
+	border-color: #6366f1;
+	border-right-color: transparent;
+}
+
+/* ===== Utility Classes ===== */
+
+/* Hidden file input */
+.file-input-hidden {
+	display: none;
+}
+
+/* Alert positioning */
+.alerts-container {
+	z-index: 1080;
+}
+
+/* Empty state icons */
+.empty-state-icon {
+	font-size: 4rem;
+	color: #dee2e6;
+}
+
+.empty-state-icon-muted {
+	font-size: 4rem;
+	color: #6c757d;
+}
+
+.warning-icon-large {
+	font-size: 3rem;
+}
+
+/* Progress bar height */
+.progress-ocr {
+	height: 28px;
+}
+
+/* Card spacing */
+.card-spacing-top {
+	margin-top: 3rem;
+}
+
+/* ===== Editable Elements ===== */
+.editable-name {
+	cursor: pointer;
+}
+
+/* ===== Table Styles ===== */
+.table-checkbox-col {
+	width: 40px;
+}
+
+.table-actions-col {
+	width: 100px;
+}
+
+/* ===== Analysis Page Styles ===== */
+.analysis-user-name {
+	min-width: 120px;
+}
+
+.analysis-bar-container {
+	height: 8px;
+	background: #eee;
+	border-radius: 4px;
+}
+
+.analysis-bar-fill {
+	height: 100%;
+	background: #0d6efd;
+	border-radius: 4px;
+}
+
+.analysis-amount {
+	min-width: 110px;
+}
+
+.analysis-item-name {
+	max-width: 200px;
+}

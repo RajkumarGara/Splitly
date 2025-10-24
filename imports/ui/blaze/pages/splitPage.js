@@ -15,26 +15,41 @@ Template.SplitPage.onCreated(function () {
 	this.billId = FlowRouter.getParam('id');
 	this.showAddForm = new ReactiveVar(false);
 	this.showDeleteButtons = new ReactiveVar(false);
+	this.showSplitMode = new ReactiveVar(false);
 	const savedPref = localStorage.getItem('splitly_showHelp');
 	this.showHelpInfo = new ReactiveVar(savedPref === null ? true : savedPref === 'true');
+	
+	// Track subscription ready state
+	this.subscriptionsReady = new ReactiveVar(false);
+	
 	this.autorun(() => {
-		this.subscribe('bills.all');
-		this.subscribe('globalUsers.all');
+		const sub1 = this.subscribe('bills.all');
+		const sub2 = this.subscribe('globalUsers.all');
+		this.subscriptionsReady.set(sub1.ready() && sub2.ready());
 	});
 });
 
 Template.SplitPage.helpers({
+	isLoading() {
+		return !Template.instance().subscriptionsReady.get();
+	},
 	bill() {
 		return Bills.findOne(Template.instance().billId);
 	},
 	showHelpInfo() {
 		return Template.instance().showHelpInfo.get();
 	},
+	showAddForm() {
+		return Template.instance().showAddForm.get();
+	},
 	showDeleteButtons() {
 		return Template.instance().showDeleteButtons.get();
 	},
+	showSplitMode() {
+		return Template.instance().showSplitMode.get();
+	},
 	isEditMode() {
-		return Template.instance().showDeleteButtons.get();
+		return Template.instance().showSplitMode.get() || Template.instance().showDeleteButtons.get();
 	},
 	hasItems() {
 		const b = Bills.findOne(Template.instance().billId);
@@ -131,13 +146,30 @@ Template.SplitPage.events({
 		localStorage.setItem('splitly_showHelp', 'false');
 	},
 	'click #showAddFormBtn'(e, tpl) {
-		tpl.showAddForm.set(true);
+		tpl.showAddForm.set(!tpl.showAddForm.get());
 	},
 	'click #hideAddFormBtn'(e, tpl) {
 		tpl.showAddForm.set(false);
 	},
+	'click #toggleSplitBtn'(e, tpl) {
+		const newState = !tpl.showSplitMode.get();
+		tpl.showSplitMode.set(newState);
+		// Turn off delete mode when entering split mode
+		if (newState) {
+			tpl.showDeleteButtons.set(false);
+		}
+		// Close add form when clicking split button
+		tpl.showAddForm.set(false);
+	},
 	'click #toggleDeleteBtn'(e, tpl) {
-		tpl.showDeleteButtons.set(!tpl.showDeleteButtons.get());
+		const newState = !tpl.showDeleteButtons.get();
+		tpl.showDeleteButtons.set(newState);
+		// Turn off split mode when entering delete mode
+		if (newState) {
+			tpl.showSplitMode.set(false);
+		}
+		// Close add form when clicking delete button
+		tpl.showAddForm.set(false);
 	},
 	async 'click .user-chip'(e, tpl) {
 		e.preventDefault();

@@ -43,11 +43,11 @@
 					{{#each perUserGlobal}}
 						<li class="list-group-item py-2">
 							<div class="d-flex justify-content-between align-items-center">
-								<div class="me-3" style="min-width:120px">{{name}}</div>
-								<div class="flex-grow-1 mx-3" style="height:8px;background:#eee;border-radius:4px;">
-									<div style="width: {{barWidth}}%;height:100%;background:#0d6efd;border-radius:4px;"></div>
+								<div class="me-3 analysis-user-name">{{name}}</div>
+								<div class="flex-grow-1 mx-3 analysis-bar-container">
+									<div class="analysis-bar-fill" style="width: {{barWidth}}%;"></div>
 								</div>
-								<div class="text-end" style="min-width:110px">
+								<div class="text-end analysis-amount">
 									<span class="badge bg-dark">${{amount}}</span>
 									<span class="badge bg-secondary ms-1">{{percent}}%</span>
 								</div>
@@ -69,7 +69,10 @@
 					<h5 class="mb-2">Top Items</h5>
 					<ul class="list-group small">
 						{{#each topItems}}
-							<li class="list-group-item d-flex justify-content-between"><span class="text-truncate" style="max-width:200px" title="{{name}}">{{name}}</span><span>${{total}} <span class="text-muted">×{{count}}</span></span></li>
+							<li class="list-group-item d-flex justify-content-between">
+								<span class="text-truncate analysis-item-name" title="{{name}}">{{name}}</span>
+								<span>${{total}} <span class="text-muted">×{{count}}</span></span>
+							</li>
 						{{/each}}
 					</ul>
 				</div>

@@ -11,7 +11,7 @@
 						<label for="userNameModalInput" class="form-label">Add Person</label>
 						<div class="input-group">
 							<input type="text" class="form-control" id="userNameModalInput" placeholder="Name" />
-							<button class="btn btn-primary" id="addUserModalBtn">Add</button>
+							<button class="btn btn-purple" id="addUserModalBtn">Add</button>
 						</div>
 					</div>
 					<hr />
@@ -33,7 +33,7 @@
 											</button>
 										</div>
 									{{else}}
-										<span class="editable-name" data-id="{{_id}}" style="cursor: pointer;" title="Click to edit">{{name}}</span>
+										<span class="editable-name" data-id="{{_id}}" title="Click to edit">{{name}}</span>
 										<button class="btn btn-sm btn-outline-danger remove-user" data-id="{{_id}}">Remove</button>
 									{{/if}}
 								</li>
@@ -42,10 +42,6 @@
 					{{else}}
 						<p class="text-muted small">No people added yet.</p>
 					{{/if}}
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-success" id="saveUsersBtn">Save</button>
-					<button type="button" class="btn btn-secondary" id="cancelUsersBtn" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>

@@ -1,5 +1,5 @@
 <template name="MainLayout">
-	<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+	<nav class="navbar navbar-expand-lg navbar-dark navbar-purple mb-4">
 		<div class="container-fluid">
 			<a class="navbar-brand" href="/">Splitly</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsplitly"><span class="navbar-toggler-icon"></span></button>
@@ -28,7 +28,7 @@
 </template>
 
 <template name="Alerts">
-	<div class="position-fixed top-0 end-0 p-3" style="z-index:1080;">
+	<div class="position-fixed top-0 end-0 p-3 alerts-container">
 		{{#each alerts}}
 			<div class="alert alert-{{typeClass}} alert-dismissible fade show" role="alert">
 				{{msg}}
