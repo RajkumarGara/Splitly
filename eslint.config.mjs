@@ -29,6 +29,7 @@ export default [
 				Image: 'readonly',
 				setTimeout: 'readonly',
 				Blaze: 'readonly',
+				Buffer: 'readonly',
 			},
 		},
 		plugins: { react: reactPlugin, '@typescript-eslint': tsPlugin },

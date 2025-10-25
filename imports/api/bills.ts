@@ -320,14 +320,22 @@ Meteor.methods({
 			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
 		}
 
-		console.log('===== OCR EXTRACT START =====');
+		console.log('');
+		console.log('╔═════════════════════════════════════════╗');
+		console.log('║     OCR EXTRACTION STARTED              ║');
+		console.log('╚═════════════════════════════════════════╝');
 		console.log('Bill ID:', billId);
-		console.log('Text length:', text.length);
 
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) {
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
+
+		console.log('');
+		console.log('━━━━━ COMPLETE OCR TEXT ━━━━━');
+		console.log(text);
+		console.log('━━━━━ END OCR TEXT ━━━━━');
+		console.log('');
 
 		const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
 		const storeName = detectStoreName(text);
@@ -341,20 +349,38 @@ Meteor.methods({
 			existing.users.map((u: UserProfile) => u.id),
 		);
 
-		console.log('===== PARSING RESULTS =====');
-		console.log('Items found:', items.length);
-		console.log('Receipt total:', receiptTotal);
-		console.log('Tax:', taxAmount);
-		console.log('Total amount:', totalAmount);
+		// Calculate totals from extracted items
+		const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
+		const calculatedTotal = calculatedItemsTotal + taxAmount;
 
+		console.log('');
+		console.log('━━━━━ EXTRACTED ITEMS ━━━━━');
 		if (items.length > 0) {
-			console.log('===== ITEMS EXTRACTED =====');
 			items.forEach((item, idx) => {
 				console.log(`${idx + 1}. ${item.name} - $${item.price.toFixed(2)}`);
 			});
 		} else {
-			console.log('===== NO ITEMS FOUND =====');
+			console.log('(No items found)');
 		}
+
+		console.log('');
+		console.log('━━━━━ EXTRACTED RESULTS ━━━━━');
+		console.log('Items found:', items.length);
+		console.log('Items total:', receiptTotal !== null ? `$${receiptTotal.toFixed(2)}` : 'N/A');
+		console.log('Tax:', `$${taxAmount.toFixed(2)}`);
+		console.log('Total amount:', totalAmount !== null ? `$${totalAmount.toFixed(2)}` : 'N/A');
+
+		console.log('');
+		console.log('━━━━━ CALCULATED RESULTS ━━━━━');
+		console.log('Items found:', items.length);
+		console.log('Items total:', `$${calculatedItemsTotal.toFixed(2)}`);
+		console.log('Tax:', `$${taxAmount.toFixed(2)}`);
+		console.log('Total amount:', `$${calculatedTotal.toFixed(2)}`);
+
+		// Check for mismatches
+		const itemsTotalMismatch = receiptTotal !== null && Math.abs(calculatedItemsTotal - receiptTotal) > 0.01;
+		const totalAmountMismatch = totalAmount !== null && Math.abs(calculatedTotal - totalAmount) > 0.01;
+		const hasMismatch = itemsTotalMismatch || totalAmountMismatch;
 
 		if (!items.length) {
 			return 0;
@@ -370,7 +396,15 @@ Meteor.methods({
 			receiptDate,
 		);
 
-		console.log('===== OCR EXTRACT COMPLETE =====');
+		console.log('');
+		console.log('╔═════════════════════════════════════════╗');
+		if (hasMismatch) {
+			console.log('║     OCR EXTRACTION COMPLETED ⚠️          ║');
+		} else {
+			console.log('║     OCR EXTRACTION COMPLETED ✅          ║');
+		}
+		console.log('╚═════════════════════════════════════════╝');
+		console.log('');
 		return items.length;
 	},
 });

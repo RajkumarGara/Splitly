@@ -47,9 +47,9 @@ export function detectStoreName(text: string): string {
 	const upperText = text.toUpperCase();
 
 	const storePatterns = [
-		{ pattern: /COSTCO\s*WHOLESALE|COSTCO/i, name: 'Costco' },
-		{ pattern: /WAL[*\s]?MART/i, name: 'Walmart' },
-		{ pattern: /HALAL\s*MARKET|FORT\s*WAYNE\s*HALAL|FWHALALMARKET|FWHALALMARKET@GMAIL/i, name: 'Halal' },
+		{ pattern: /C[O0]STC[O0][\s\W]*WH[O0]LESALE|C[O0]STC[O0]|WHOLESALE.*C[O0]STC[O0]/i, name: 'Costco' },
+		{ pattern: /WAL[*\s\-_]?MART/i, name: 'Walmart' },
+		{ pattern: /HALAL\s*MARKET|FORT\s*WAYNE\s*HALAL|FWHALALMARKET|FWHALALMARKET@GMAIL|fwhalalmarket@gmail/i, name: 'Halal' },
 		{ pattern: /TARGET/i, name: 'Target' },
 		{ pattern: /KROGER/i, name: 'Kroger' },
 		{ pattern: /FRESH\s*THYME|FRESHTHYME\.COM/i, name: 'Fresh Thyme' },
@@ -59,10 +59,12 @@ export function detectStoreName(text: string): string {
 
 	for (const { pattern, name } of storePatterns) {
 		if (pattern.test(upperText)) {
+			console.log(`🏪 Detected store: ${name}`);
 			return name;
 		}
 	}
 
+	console.log('🏪 Store not recognized, using generic parser');
 	return 'Receipt';
 }
 
@@ -128,16 +130,16 @@ export function extractTotalsFromLines(lines: string[]) {
 			}
 		}
 
-		// Match TAX
-		if (upperLine.match(/TAX/i) && !upperLine.match(/TOTAL/i)) {
+		// Match TAX (but not TOTAL or subtotal lines)
+		if (upperLine.match(/TAX/i) && !upperLine.match(/TOTAL|SUBTOTAL/i)) {
 			const match = line.match(/[$]?(\d+[.,]\d{2})/);
 			if (match) {
 				taxAmount += parseFloat(match[1].replace(',', '.'));
 			}
 		}
 
-		// Match TOTAL
-		if (!totalAmount && upperLine.match(/^(?!.*SUB).*TOTAL|DEBIT|VISA|CREDIT|PAID|AMOUNT DUE|BALANCE DUE/i)) {
+		// Match TOTAL (including Costco's "*** TOTAL" format)
+		if (!totalAmount && upperLine.match(/^\*+\s*TOTAL|^(?!.*SUB).*TOTAL|DEBIT|VISA|CREDIT|PAID|AMOUNT DUE|BALANCE DUE/i)) {
 			const match = line.match(/[$]?(\d+[.,]\d{2})/);
 			if (match) {
 				const amount = parseFloat(match[1].replace(',', '.'));
