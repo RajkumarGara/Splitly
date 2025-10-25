@@ -18,10 +18,10 @@ Template.SplitPage.onCreated(function () {
 	this.showSplitMode = new ReactiveVar(false);
 	const savedPref = localStorage.getItem('splitly_showHelp');
 	this.showHelpInfo = new ReactiveVar(savedPref === null ? true : savedPref === 'true');
-	
+
 	// Track subscription ready state
 	this.subscriptionsReady = new ReactiveVar(false);
-	
+
 	this.autorun(() => {
 		const sub1 = this.subscribe('bills.all');
 		const sub2 = this.subscribe('globalUsers.all');

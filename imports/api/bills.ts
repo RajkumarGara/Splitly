@@ -2,75 +2,250 @@ import { Mongo } from 'meteor/mongo';
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
 import type { BillDoc, UserProfile, Item } from './models';
-// Using loose any collection due to temporary ambient types; can be replaced with proper generics once types fixed.
+import { parseReceiptText } from './receiptParsers';
+import { detectStoreName, extractDateFromLines } from './receiptUtils';
+import { extractReceiptWithGemini, isGeminiAvailable } from './geminiOcr';
+
+/**
+ * MongoDB collection for bills
+ * Stores receipt information, items, and user splits
+ */
 export const Bills = new (Mongo as any).Collection('bills');
 
 Meteor.methods({
+	/**
+	 * Insert a new bill into the database
+	 * @param bill - Bill document to insert
+	 * @returns {Promise<string>} - ID of the inserted bill
+	 */
 	async 'bills.insert'(bill: BillDoc) {
 		check(bill, Object);
+
+		// Sanitize and validate input
 		if (!Array.isArray(bill.users)) { bill.users = []; }
 		if (!Array.isArray(bill.items)) { bill.items = []; }
 		bill.createdAt = bill.createdAt || new Date();
 		bill.updatedAt = bill.createdAt;
+
+		// Validate store name if provided
+		if (bill.storeName && typeof bill.storeName !== 'string') {
+			throw new Meteor.Error('invalid-storeName', 'Store name must be a string');
+		}
+
 		return await Bills.insertAsync(bill);
 	},
+
+	/**
+	 * Add a user to an existing bill
+	 * @param billId - ID of the bill
+	 * @param user - User profile to add
+	 */
 	async 'bills.addUser'(billId: string, user: UserProfile) {
-		check(billId, String); check(user, Object);
-		if (!user.name?.trim()) { throw new Meteor.Error('invalid-user', 'User name required'); }
+		check(billId, String);
+		check(user, Object);
+
+		// Validate user data
+		if (!user.name?.trim()) {
+			throw new Meteor.Error('invalid-user', 'User name required');
+		}
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		if (existing.users.some((u: UserProfile) => u.name === user.name)) { throw new Meteor.Error('duplicate-user', 'User name already exists'); }
-		await Bills.updateAsync(billId, { $push: { users: user }, $set: { updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		// Check for duplicate user name
+		if (existing.users.some((u: UserProfile) => u.name.trim() === user.name.trim())) {
+			throw new Meteor.Error('duplicate-user', 'User name already exists');
+		}
+
+		// Sanitize user name
+		const sanitizedUser = {
+			...user,
+			name: user.name.trim(),
+			contact: user.contact?.trim(),
+		};
+
+		await Bills.updateAsync(billId, {
+			$push: { users: sanitizedUser },
+			$set: { updatedAt: new Date() },
+		});
 	},
+
+	/**
+	 * Remove a user from a bill and all associated items
+	 * @param billId - ID of the bill
+	 * @param userId - ID of the user to remove
+	 */
 	async 'bills.removeUser'(billId: string, userId: string) {
-		check(billId, String); check(userId, String);
+		check(billId, String);
+		check(userId, String);
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		await Bills.updateAsync(billId, { $set: { users: existing.users.filter((u: UserProfile) => u.id !== userId), items: existing.items.map((i: Item) => ({ ...i, userIds: i.userIds.filter((id: string) => id !== userId) })), updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		// Remove user from bill and all items
+		await Bills.updateAsync(billId, {
+			$set: {
+				users: existing.users.filter((u: UserProfile) => u.id !== userId),
+				items: existing.items.map((i: Item) => ({
+					...i,
+					userIds: i.userIds.filter((id: string) => id !== userId),
+				})),
+				updatedAt: new Date(),
+			},
+		});
 	},
+
+	/**
+	 * Add an item to a bill
+	 * @param billId - ID of the bill
+	 * @param item - Item to add
+	 */
 	async 'bills.addItem'(billId: string, item: Item) {
-		check(billId, String); check(item, Object);
-		if (!item.name?.trim()) { throw new Meteor.Error('invalid-item', 'Item name required'); }
-		if (typeof item.price !== 'number' || item.price <= 0) { throw new Meteor.Error('invalid-price', 'Item price must be > 0'); }
+		check(billId, String);
+		check(item, Object);
+
+		// Validate item data
+		if (!item.name?.trim()) {
+			throw new Meteor.Error('invalid-item', 'Item name required');
+		}
+		if (typeof item.price !== 'number' || item.price <= 0) {
+			throw new Meteor.Error('invalid-price', 'Item price must be > 0');
+		}
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		await Bills.updateAsync(billId, { $push: { items: item }, $set: { updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		// Sanitize item name
+		const sanitizedItem = {
+			...item,
+			name: item.name.trim(),
+			price: Number(item.price.toFixed(2)),
+		};
+
+		await Bills.updateAsync(billId, {
+			$push: { items: sanitizedItem },
+			$set: { updatedAt: new Date() },
+		});
 	},
+
+	/**
+	 * Remove an item from a bill
+	 * @param billId - ID of the bill
+	 * @param itemId - ID of the item to remove
+	 */
 	async 'bills.removeItem'(billId: string, itemId: string) {
-		check(billId, String); check(itemId, String);
+		check(billId, String);
+		check(itemId, String);
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		await Bills.updateAsync(billId, { $set: { items: existing.items.filter((i: Item) => i.id !== itemId), updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		await Bills.updateAsync(billId, {
+			$set: {
+				items: existing.items.filter((i: Item) => i.id !== itemId),
+				updatedAt: new Date(),
+			},
+		});
 	},
+
+	/**
+	 * Delete a bill
+	 * @param billId - ID of the bill to delete
+	 */
 	async 'bills.remove'(billId: string) {
 		check(billId, String);
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
 		await Bills.removeAsync(billId);
 	},
+
+	/**
+	 * Update all items in a bill
+	 * @param billId - ID of the bill
+	 * @param items - Array of items to replace existing items
+	 */
 	async 'bills.updateItems'(billId: string, items: Item[]) {
 		check(billId, String);
 		check(items, Array);
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		await Bills.updateAsync(billId, { $set: { items, updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		// Validate and sanitize all items
+		const sanitizedItems = items.map(item => ({
+			...item,
+			name: item.name?.trim() || '',
+			price: Number(item.price?.toFixed(2) || 0),
+		}));
+
+		await Bills.updateAsync(billId, {
+			$set: {
+				items: sanitizedItems,
+				updatedAt: new Date(),
+			},
+		});
 	},
+
+	/**
+	 * Update tax amount for a bill
+	 * @param billId - ID of the bill
+	 * @param taxAmount - New tax amount
+	 */
 	async 'bills.updateTax'(billId: string, taxAmount: number) {
 		check(billId, String);
 		check(taxAmount, Number);
-		if (taxAmount < 0) { throw new Meteor.Error('invalid-tax', 'Tax amount cannot be negative'); }
+
+		if (taxAmount < 0) {
+			throw new Meteor.Error('invalid-tax', 'Tax amount cannot be negative');
+		}
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
-		await Bills.updateAsync(billId, { $set: { taxAmount: Number(taxAmount.toFixed(2)), updatedAt: new Date() } });
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		await Bills.updateAsync(billId, {
+			$set: {
+				taxAmount: Number(taxAmount.toFixed(2)),
+				updatedAt: new Date(),
+			},
+		});
 	},
+
+	/**
+	 * Toggle a user's participation in an item
+	 * @param billId - ID of the bill
+	 * @param itemId - ID of the item
+	 * @param userId - ID of the user to toggle
+	 */
 	async 'bills.toggleUserOnItem'(billId: string, itemId: string, userId: string) {
 		check(billId, String);
 		check(itemId, String);
 		check(userId, String);
+
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
 		const item = existing.items.find((i: Item) => i.id === itemId);
-		if (!item) { throw new Meteor.Error('not-found', 'Item not found'); }
+		if (!item) {
+			throw new Meteor.Error('not-found', 'Item not found');
+		}
 
 		// Toggle user: add if not present, remove if present
 		const userIds = item.userIds || [];
@@ -84,443 +259,221 @@ Meteor.methods({
 			i.id === itemId ? { ...i, userIds: newUserIds } : i,
 		);
 
-		await Bills.updateAsync(billId, { $set: { items: updatedItems, updatedAt: new Date() } });
-	}
-	, async 'bills.syncUserName'(userId: string, newName: string) {
-		check(userId, String); check(newName, String);
+		await Bills.updateAsync(billId, {
+			$set: {
+				items: updatedItems,
+				updatedAt: new Date(),
+			},
+		});
+	},
+
+	/**
+	 * Sync a user's name across all bills
+	 * @param userId - ID of the user
+	 * @param newName - New name for the user
+	 * @returns {Promise<boolean>} - Success status
+	 */
+	async 'bills.syncUserName'(userId: string, newName: string) {
+		check(userId, String);
+		check(newName, String);
+
+		if (!newName.trim()) {
+			throw new Meteor.Error('invalid-name', 'User name cannot be empty');
+		}
+
 		// Update all bills containing this user id
 		const cursor = Bills.find({ 'users.id': userId });
 		const bills = await cursor.fetchAsync();
+
 		for (const bill of bills) {
-			const newUsers = bill.users.map((u: any) => u.id === userId ? { ...u, name: newName } : u);
-			await Bills.updateAsync(bill._id, { $set: { users: newUsers, updatedAt: new Date() } });
+			const newUsers = bill.users.map((u: UserProfile) =>
+				u.id === userId ? { ...u, name: newName.trim() } : u,
+			);
+			await Bills.updateAsync(bill._id, {
+				$set: {
+					users: newUsers,
+					updatedAt: new Date(),
+				},
+			});
 		}
+
 		return true;
 	},
 });
 
-// OCR text parser: extract items and prices from receipt text with intelligent filtering
+/**
+ * OCR text extraction methods
+ * Extract items, prices, and totals from receipt text
+ */
 Meteor.methods({
-	async 'ocr.extract'(billId: string, text: string) {
-		check(billId, String); check(text, String);
-		console.log('===== OCR EXTRACT START =====');
-		console.log('Bill ID:', billId);
-		console.log('Text length:', text.length);
+	/**
+	 * Extract items from receipt image using Gemini AI
+	 * Falls back to text-based extraction if Gemini fails
+	 * @param billId - ID of the bill to add items to
+	 * @param imageData - Base64 encoded image data
+	 * @returns {Promise<number>} - Number of items extracted
+	 */
+	async 'ocr.extractFromImage'(billId: string, imageData: string) {
+		check(billId, String);
+		check(imageData, String);
 
 		const existing = await Bills.findOneAsync(billId);
-		if (!existing) { throw new Meteor.Error('not-found', 'Bill not found'); }
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
 
+		console.log(`\n🧾 OCR Extraction Started - Bill: ${billId}`);
+
+		// Try Gemini AI first if available
+		if (isGeminiAvailable()) {
+			console.log('🤖 Using Gemini AI...');
+			const geminiResult = await extractReceiptWithGemini(imageData);
+
+			if (geminiResult.success && geminiResult.items && geminiResult.items.length > 0) {
+				const userIds = existing.users.map((u: UserProfile) => u.id);
+
+				// Convert Gemini items to our Item format
+				const items: Item[] = geminiResult.items.map((item, idx) => ({
+					id: `gemini${Date.now()}_${idx}`,
+					name: item.name,
+					price: Number(item.price.toFixed(2)),
+					userIds,
+					splitType: 'equal' as const,
+				}));
+
+				const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
+				const taxAmount = geminiResult.tax || 0;
+				const calculatedTotal = calculatedItemsTotal + taxAmount;
+
+				console.log(`✅ Extracted ${items.length} items from ${geminiResult.store || 'Receipt'}`);
+				console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
+
+				// Check for mismatches
+				const itemsTotalMismatch = geminiResult.subtotal && Math.abs(calculatedItemsTotal - geminiResult.subtotal) > 0.01;
+				const totalAmountMismatch = geminiResult.total && Math.abs(calculatedTotal - geminiResult.total) > 0.01;
+
+				if (itemsTotalMismatch || totalAmountMismatch) {
+					console.log(`⚠️  Receipt mismatch detected`);
+				}
+
+				await persistParsedReceipt(
+					billId,
+					items,
+					geminiResult.subtotal || calculatedItemsTotal,
+					taxAmount,
+					geminiResult.total || calculatedTotal,
+					geminiResult.store || 'Receipt',
+					null,
+				);
+
+				return items.length;
+			}
+
+			console.log('⚠️  Gemini failed, falling back to Tesseract...');
+		}
+
+		// Fallback: caller should use 'ocr.extract' with Tesseract text
+		throw new Meteor.Error('gemini-unavailable', 'Gemini AI not available or extraction failed. Please use Tesseract fallback.');
+	},
+
+	/**
+	 * Extract items and totals from OCR text
+	 * @param billId - ID of the bill to add items to
+	 * @param text - OCR extracted text from receipt
+	 * @returns {Promise<number>} - Number of items extracted
+	 */
+	async 'ocr.extract'(billId: string, text: string) {
+		check(billId, String);
+		check(text, String);
+
+		if (!text.trim()) {
+			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
+		}
+
+		console.log(`\n🧾 OCR Extraction Started (Tesseract) - Bill: ${billId}`);
+
+		const existing = await Bills.findOneAsync(billId);
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
 		const storeName = detectStoreName(text);
-		console.log('Detected store:', storeName);
+		const receiptDate = extractDateFromLines(lines);
 
-		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(text, existing.users.map((u: any) => u.id));
+		console.log(`📍 Store: ${storeName}, Date: ${receiptDate || 'N/A'}`);
 
-		console.log('===== PARSING RESULTS =====');
-		console.log('Items found:', items.length);
-		console.log('Receipt total:', receiptTotal);
-		console.log('Tax:', taxAmount);
-		console.log('Total amount:', totalAmount);
+		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(
+			text,
+			existing.users.map((u: UserProfile) => u.id),
+		);
 
-		if (items.length > 0) {
-			console.log('===== ITEMS EXTRACTED =====');
-			items.forEach((item, idx) => {
-				console.log(`${idx + 1}. ${item.name} - $${item.price.toFixed(2)}`);
-			});
+		const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
+		const calculatedTotal = calculatedItemsTotal + taxAmount;
+
+		console.log(`✅ Extracted ${items.length} items`);
+		console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
+
+		// Check for mismatches
+		const itemsTotalMismatch = receiptTotal !== null && Math.abs(calculatedItemsTotal - receiptTotal) > 0.01;
+		const totalAmountMismatch = totalAmount !== null && Math.abs(calculatedTotal - totalAmount) > 0.01;
+
+		if (itemsTotalMismatch || totalAmountMismatch) {
+			console.log(`⚠️  Receipt mismatch detected`);
 		}
 
 		if (!items.length) {
-			console.log('===== NO ITEMS FOUND =====');
 			return 0;
 		}
 
-		await persistParsedReceipt(billId, items, receiptTotal, taxAmount, totalAmount, storeName);
-		console.log('===== OCR EXTRACT COMPLETE =====');
+		await persistParsedReceipt(
+			billId,
+			items,
+			receiptTotal,
+			taxAmount,
+			totalAmount,
+			storeName,
+			receiptDate,
+		);
+
 		return items.length;
 	},
 });
 
-// --- OCR Parsing Helpers (modularized) ---
-function detectStoreName(text: string): string {
-	const upperText = text.toUpperCase();
-
-	// Check for common store patterns (prioritize specific matches first)
-	const storePatterns = [
-		{ pattern: /COSTCO\s*WHOLESALE/i, name: 'Costco' },
-		{ pattern: /WAL[*\s]?MART/i, name: 'Walmart' },
-		{ pattern: /TARGET/i, name: 'Target' },
-		{ pattern: /KROGER/i, name: 'Kroger' },
-		{ pattern: /WHOLE\s*FOODS/i, name: 'Whole Foods' },
-		{ pattern: /TRADER\s*JOE/i, name: 'Trader Joe\'s' },
-		{ pattern: /ALDI/i, name: 'Aldi' },
-		{ pattern: /FRESH\s*THYME/i, name: 'Fresh Thyme' },
-		{ pattern: /HOBBY\s*LOBBY/i, name: 'Hobby Lobby' },
-		{ pattern: /HOME\s*DEPOT/i, name: 'Home Depot' },
-		{ pattern: /LOWE'?S/i, name: 'Lowe\'s' },
-		{ pattern: /CVS/i, name: 'CVS' },
-		{ pattern: /WALGREENS/i, name: 'Walgreens' },
-		{ pattern: /DOLLAR\s*GENERAL/i, name: 'Dollar General' },
-		{ pattern: /DOLLAR\s*TREE/i, name: 'Dollar Tree' },
-		{ pattern: /SAFEWAY/i, name: 'Safeway' },
-		{ pattern: /PUBLIX/i, name: 'Publix' },
-		{ pattern: /MEIJER/i, name: 'Meijer' },
-		{ pattern: /HALAL\s*MARKET/i, name: 'Halal Market' },
-	];
-
-	for (const { pattern, name } of storePatterns) {
-		if (pattern.test(upperText)) {
-			return name;
-		}
-	}
-
-	return 'Receipt'; // Default name if no store detected
-}
-
-function parseReceiptText(text: string, userIds: string[]) {
-	console.log('===== PARSE RECEIPT TEXT START =====');
-	console.log('User IDs count:', userIds.length);
-
-	const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
-	console.log('Total lines:', lines.length);
-	console.log('');
-
-	const items: Item[] = [];
-	let receiptTotal: number | null = null;
-	let taxAmount = 0;
-	let totalAmount: number | null = null;
-
-	// First pass: Extract subtotal, tax, and total
-	console.log('===== PASS 1: Extract Totals =====');
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
-		const upperLine = line.toUpperCase();
-
-		// Match SUBTOTAL
-		if (!receiptTotal && upperLine.match(/SUB.*?TOTAL/i)) {
-			const match = line.match(/[$]?(\d+[.,]\d{2})/);
-			if (match) {
-				receiptTotal = parseFloat(match[1].replace(',', '.'));
-				console.log(`  SUBTOTAL: $${receiptTotal.toFixed(2)} from "${line}"`);
-			}
-		}
-
-		// Match TAX
-		if (upperLine.match(/TAX/i) && !upperLine.match(/TOTAL/i)) {
-			const match = line.match(/[$]?(\d+[.,]\d{2})/);
-			if (match) {
-				const tax = parseFloat(match[1].replace(',', '.'));
-				taxAmount += tax;
-				console.log(`  TAX: $${tax.toFixed(2)} from "${line}"`);
-			}
-		}
-
-		// Match TOTAL (not subtotal)
-		if (!totalAmount && upperLine.match(/^(?!.*SUB).*TOTAL/i)) {
-			const match = line.match(/[$]?(\d+[.,]\d{2})/);
-			if (match) {
-				totalAmount = parseFloat(match[1].replace(',', '.'));
-				console.log(`  TOTAL: $${totalAmount.toFixed(2)} from "${line}"`);
-			}
-		}
-
-		// Match payment amounts (DEBIT, VISA, etc.)
-		if (!totalAmount && upperLine.match(/DEBIT|VISA|CREDIT|PAID|AMOUNT DUE|BALANCE DUE/i)) {
-			const match = line.match(/[$]?(\d+[.,]\d{2})/);
-			if (match) {
-				const amount = parseFloat(match[1].replace(',', '.'));
-				if (amount > 0) {
-					totalAmount = amount;
-					console.log(`  TOTAL (from payment): $${totalAmount.toFixed(2)} from "${line}"`);
-				}
-			}
-		}
-	}
-	console.log('');
-
-	// Second pass: Extract items
-	console.log('===== PASS 2: Extract Items =====');
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
-		const upperLine = line.toUpperCase();
-
-		// Skip header/footer lines
-		if (skipLine(line)) {
-			console.log(`  Line ${i + 1}: SKIP "${line}"`);
-			continue;
-		}
-
-		// Stop at summary section
-		if (upperLine.match(/^(SUB.*?TOTAL|TAX|TOTAL|BALANCE|CHANGE|VISA|CREDIT|DEBIT|APPROVED|THANK)/i)) {
-			console.log(`  Line ${i + 1}: STOP (summary) "${line}"`);
-			break;
-		}
-
-		// Try to extract item
-		const extracted = tryExtractItem(line, lines, i, userIds);
-		if (extracted) {
-			items.push(extracted);
-			console.log(`  Line ${i + 1}: FOUND "${extracted.name}" $${extracted.price.toFixed(2)}`);
-		} else {
-			console.log(`  Line ${i + 1}: SKIP (no match) "${line}"`);
-		}
-	}
-	console.log('');
-
-	// Calculate totals from items if not found
-	if ((!receiptTotal || !totalAmount) && items.length > 0) {
-		receiptTotal = receiptTotal || parseFloat(items.reduce((sum, item) => sum + item.price, 0).toFixed(2));
-		totalAmount = totalAmount || receiptTotal + taxAmount;
-		console.log('Calculated totals from items');
-		console.log(`  Subtotal: $${receiptTotal.toFixed(2)}`);
-		console.log(`  Total: $${totalAmount.toFixed(2)}`);
-	}
-
-	console.log('===== PARSE RECEIPT TEXT END =====');
-	console.log(`Result: ${items.length} items extracted`);
-	console.log('');
-
-	return { items, receiptTotal, taxAmount, totalAmount };
-}
-
-function skipLine(line: string) {
-	return !!(
-		line.match(/^(ST#|OP#|TE#|TR#|TC#|EAN|UPC|STORE|CASHIER|CUSTOMER|REG|INVOICE|RRN|SALE|SELF-CHECKOUT|CV Member|Seq|App#|Tran ID|PID|AID|TVR|TSI)/i) ||
-		line.match(/^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/) || // dates
-		line.match(/^\d{2}:\d{2}/) || // times
-		line.match(/^[\d\s:]+$/) || // only digits and spaces
-		line.match(/^[|\-*=_]+$/) || // separators
-		line.match(/^[A-Z]{1,3}:\s*$/) || // single letters with colon
-		line.match(/^\d{10,}$/) || // long number strings (barcodes, IDs)
-		line.match(/^(DISCOVER|AID|TVR|TSI|APPROVED|Entry Method|FTFM|Resp:|AMOUNT|CHANGE|Visa)/i) || // payment info
-		line.match(/^[XE]\s*$/) || // Single letter lines
-		line.length < 3
-	);
-}
-
-function tryExtractItem(line: string, lines: string[], index: number, userIds: string[]): Item | null {
-	// Universal price extraction - handles multiple formats:
-	// Format 1: NAME 4.99 N F  (Freshthyme)
-	// Format 2: NAME $1.48 N   (Fort Wayne Halal)
-	// Format 3: NAME     7.84  (Walmart simple)
-	// Format 4: NAME @ price/unit  final_price (Walmart weight)
-	// Format 5: 0 NAME  4.99 N F (with leading zero/count)
-	// Format 6: NAME  1  $1.48 N (with quantity)
-	// Format 7: 1892398 SMOOTHIES  16.99 (Costco - code + name + price)
-	// Format 8: 2 @ 3.99           5.89 (quantity @ unit price = total)
-
-	// Extract all numbers that could be prices from the line
-	const pricePatterns = [
-		// Pattern 1: Dollar sign prices with space or decimal: $1 48, $0.33, §2
-		/[$§](\d+)[.\s](\d{2})/g,
-		// Pattern 2: Simple decimal prices: 4.99, 50.35, 151.12
-		/\b(\d{1,4})\.(\d{2})\b/g,
-		// Pattern 3: Prices at end with letter flags: 4.99 N F
-		/(\d{1,4})\.(\d{2})\s+[A-Z]\s*[A-Z]?$/g,
-	];
-
-	let foundPrice: number | null = null;
-	let priceMatch: RegExpMatchArray | null = null;
-	let priceIndex = 0;
-
-	// Try each pattern and find the LAST (rightmost) price on the line
-	// This handles lines like "2 @ 3.99    5.89" where 5.89 is the actual price
-	for (const pattern of pricePatterns) {
-		const matches = Array.from(line.matchAll(pattern));
-		for (const match of matches) {
-			let price: number;
-			if (match[0].includes('$') || match[0].includes('§')) {
-				// Dollar format
-				price = parseInt(match[1]) + parseInt(match[2]) / 100;
-			} else {
-				// Decimal format
-				price = parseFloat(match[1] + '.' + match[2]);
-			}
-
-			// Validate price range
-			if (price > 0.10 && price < 2000) {
-				const matchIndex = match.index || 0;
-				// Prefer rightmost price
-				if (!foundPrice || matchIndex > priceIndex) {
-					foundPrice = price;
-					priceMatch = match;
-					priceIndex = matchIndex;
-				}
-			}
-		}
-	}
-
-	if (!foundPrice || !priceMatch) {
-		return null;
-	}
-
-	// Extract item name (everything before the price)
-	const pricePosition = priceIndex;
-	let name = line.substring(0, pricePosition).trim();
-
-	// Clean up the name
-	name = name
-		.replace(/^E\s+/, '') // Remove leading 'E' (Costco item marker)
-		.replace(/^[0-9/\s]+/, '') // Remove leading numbers/codes/quantity
-		.replace(/\s+@.*$/, '') // Remove @ price per unit
-		.replace(/\s{2,}/g, ' ') // Normalize spaces
-		.replace(/^[A-Z]$/, '') // Remove single letter
-		.trim();
-
-	// Validate name
-	if (name.length < 3) {
-		// Try to get name from previous line (multi-line items)
-		if (index > 0) {
-			const prevLine = lines[index - 1];
-			if (prevLine && prevLine.length >= 3 && !prevLine.match(/\d+\.\d{2}/)) {
-				name = prevLine.trim();
-			}
-		}
-	}
-
-	// Final name validation
-	if (name.length < 3 || name.length > 60) {
-		return null;
-	}
-
-	// Additional filtering: skip if name looks like a header or total line
-	if (name.match(/^(PRODUCT|QTY|AMT|ITEM|PRICE|RODUCT|DAIRY|FROZEN|POULTRY|PRODUCE|SEAFOOD|SUBTOTAL|TAX|TOTAL)$/i)) {
-		return null;
-	}
-
-	return {
-		id: `ocr${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-		name: cleanName(name),
-		price: foundPrice,
-		userIds,
-		splitType: 'equal',
-	};
-}
-
-function pushItem(items: Item[], name: string, price: number, userIds: string[]) {
-	console.log('pushItem called:', { name, price, valid: (price > 0 && price < 10000) });
-	if (price > 0 && price < 10000) {
-		items.push({ id: `ocr${Date.now()}_${items.length}`, name, price, userIds, splitType: 'equal' });
-		console.log('Item pushed successfully');
-	}
-}
-
-function _tryMultiLineItem(lines: string[], i: number, items: Item[], userIds: string[]) {
-	const line = lines[i];
-	const isItemName = line.match(/^[A-Z][A-Z\s\d&\-']{2,}$/);
-	if (!isItemName) { return false; }
-	const next1 = lines[i + 1] || '';
-	const next2 = lines[i + 2] || '';
-	const next3 = lines[i + 3] || '';
-	const barcodeMatch = next1.match(/^(\d{12,})\s*([A-Z])?$/);
-	const priceMatch = next2.match(/^(\d+\.?\d{1,2})$/);
-	if (barcodeMatch && priceMatch) {
-		pushItem(items, cleanName(line), parseFloat(priceMatch[1]), userIds);
-		return true;
-	}
-	const priceMatch2 = next3.match(/^(\d+\.?\d{1,2})$/);
-	if (barcodeMatch && priceMatch2) {
-		pushItem(items, cleanName(line), parseFloat(priceMatch2[1]), userIds);
-		return true;
-	}
-	const direct = next1.match(/^(\d+\.?\d{1,2})$/);
-	if (direct && !barcodeMatch) {
-		pushItem(items, cleanName(line), parseFloat(direct[1]), userIds);
-		return true;
-	}
-	return false;
-}
-
-function _tryDollarSignPrice(line: string, items: Item[], userIds: string[]) {
-	let match = line.match(/^([A-Z][A-Z\s\d&]{2,40}?)\s+(\d{12,})\s+[A-Z]\s+(\d+\.?\d{1,2})$/);
-	if (match) { pushItem(items, cleanName(match[1]), parseFloat(match[3]), userIds); return true; }
-	match = line.match(/^([A-Z][A-Z\s\d&]{2,40}?)\s+(\d{12,})\s+(\d+\.?\d{1,2})$/);
-	if (match) { pushItem(items, cleanName(match[1]), parseFloat(match[3]), userIds); return true; }
-	return false;
-}
-
-function _tryWeightLine(line: string, lines: string[], i: number, items: Item[], userIds: string[]) {
-	const match = line.match(/^(\d+\.\d+\s+l?1?b\s+@.+?)\s+(\d+\.?\d{1,2})$/i);
-	if (!match) { return false; }
-	const price = parseFloat(match[2]);
-	const prev = i > 0 ? lines[i - 1] : '';
-	const prevMatch = prev.match(/^([A-Z][A-Z\s&]+)/);
-	const name = prevMatch ? prevMatch[1].trim() : match[1].trim();
-	pushItem(items, name, price, userIds);
-	return true;
-}
-
-function _trySimpleFormat(line: string, items: Item[], userIds: string[]) {
-	const match = line.match(/^([A-Z][A-Z\s&\-']{2,40}?)\s{2,}(\d+\.?\d{1,2})$/);
-	if (!match) { return false; }
-	pushItem(items, match[1].trim(), parseFloat(match[2]), userIds);
-	return true;
-}
-
-function _tryPriceAtEnd(line: string, items: Item[], userIds: string[]) {
-	const match = line.match(/^([A-Z][A-Z\s&\-']{2,40}?)\s+(\d+\.?\d{1,2})$/);
-	if (!match) { return false; }
-	const name = match[1].trim();
-	const price = parseFloat(match[2]);
-	const hasValidName = name.length >= 4 && name.split(' ').length >= 2;
-	const hasValidPrice = price >= 0.10 && price < 10000;
-	if (hasValidName && hasValidPrice) { pushItem(items, name, price, userIds); }
-	return true;
-}
-
-function _tryDollarSignPriceVariant(line: string, items: Item[], userIds: string[]) {
-	// Match lines like "RUITS & VEGE $1 48 N" or "LINTRO ! $0.33 N" or "AMOSA 2 §2 N"
-	// Handle both $X.XX and $X XX (space instead of decimal) and §X variants
-	const match = line.match(/^([A-Z][A-Z\s&\-'!]{2,40}?)\s+[$§](\d+)[.\s](\d{2})\s+[A-Z]?$/i);
-	if (match) {
-		const name = match[1].trim();
-		const dollars = parseInt(match[2]);
-		const cents = parseInt(match[3]);
-		const price = dollars + (cents / 100);
-		console.log('tryDollarSignPrice matched:', { name, price });
-		pushItem(items, name, price, userIds);
-		return true;
-	}
-	// Also try simpler pattern: "NAME $X.XX" or "NAME $X XX"
-	const match2 = line.match(/^([A-Z][A-Z\s&\-'!]{2,40}?)\s+[$§](\d+)[.\s](\d{2})$/i);
-	if (match2) {
-		const name = match2[1].trim();
-		const dollars = parseInt(match2[2]);
-		const cents = parseInt(match2[3]);
-		const price = dollars + (cents / 100);
-		console.log('tryDollarSignPrice matched (pattern 2):', { name, price });
-		pushItem(items, name, price, userIds);
-		return true;
-	}
-	return false;
-}
-
-function cleanName(raw: string) {
-	let name = raw.trim();
-	// Remove common OCR artifacts and formatting
-	name = name.replace(/\s+\d{1,3}CT$/i, ''); // Remove "CT" count suffix
-	name = name.replace(/\s+[A-Z]\d+$/i, ''); // Remove code suffixes
-	name = name.replace(/\s+[|/].*$/, ''); // Remove | or / and everything after
-	name = name.replace(/\s+[$§]\s*$/, ''); // Remove trailing $ or §
-	name = name.replace(/\s{2,}/g, ' '); // Normalize spaces
-	name = name.replace(/\s+[A-Z]$/, ''); // Remove single letter at end (like "N")
-
-	// Fix common OCR errors in item names
-	name = name.replace(/^ruts/i, 'Fruits'); // "ruts" -> "Fruits"
-	name = name.replace(/^1intro/i, 'Intro'); // "1intro" -> "Intro"
-	name = name.replace(/whosa/i, 'Samosa'); // "whosa" -> "Samosa"
-
-	return name.trim();
-}
-
-async function persistParsedReceipt(billId: string, items: Item[], receiptTotal: number | null, taxAmount: number, totalAmount: number | null, storeName?: string) {
+/**
+ * Persist parsed receipt data to the database
+ * Calculates totals and mismatches between OCR and calculated values
+ * @param billId - ID of the bill to update
+ * @param items - Extracted items from receipt
+ * @param receiptTotal - Subtotal from receipt
+ * @param taxAmount - Tax amount from receipt
+ * @param totalAmount - Total amount from receipt
+ * @param storeName - Detected store name
+ * @param receiptDate - Receipt date string
+ */
+async function persistParsedReceipt(
+	billId: string,
+	items: Item[],
+	receiptTotal: number | null,
+	taxAmount: number,
+	totalAmount: number | null,
+	storeName?: string,
+	receiptDate?: string | null,
+) {
+	// Calculate totals from extracted items
 	const calculatedTotal = Number(items.reduce((s, it) => s + it.price, 0).toFixed(2));
+
+	// Check for mismatches (tolerance of $0.05 for rounding differences)
 	const totalMismatch = receiptTotal && Math.abs(calculatedTotal - receiptTotal) > 0.05;
 	const calculatedWithTax = Number((calculatedTotal + taxAmount).toFixed(2));
 	const totalWithTaxMismatch = totalAmount && Math.abs(calculatedWithTax - totalAmount) > 0.05;
+
 	await Bills.updateAsync(billId, {
 		$push: { items: { $each: items } },
 		$set: {
 			updatedAt: new Date(),
 			storeName: storeName || 'Receipt',
+			date: receiptDate || undefined,
 			receiptTotal: receiptTotal ? Number(receiptTotal.toFixed(2)) : null,
 			calculatedTotal: Number(calculatedTotal.toFixed(2)),
 			totalMismatch,
@@ -532,53 +485,17 @@ async function persistParsedReceipt(billId: string, items: Item[], receiptTotal:
 	});
 }
 
-// OCR file stub: accept file metadata and generate sample items based on file characteristics
+/**
+ * Data management methods
+ */
 Meteor.methods({
-	async 'ocr.extractFromFile'(billId: string, fileInfo: { name: string; size: number; type?: string }) {
-		check(billId, String); check(fileInfo, Object);
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
-
-		// Generate sample items based on file size (simulating OCR extraction)
-		// In production, this would use actual OCR to extract text and parse items
-		const sampleItems = [
-			{ name: 'Main Course', price: 18.99 },
-			{ name: 'Side Dish', price: 6.50 },
-			{ name: 'Beverage', price: 3.99 },
-			{ name: 'Dessert', price: 7.50 },
-			{ name: 'Appetizer', price: 8.99 },
-		];
-
-		// Generate 2-4 items based on file size
-		const numItems = Math.min(Math.max(2, Math.floor(fileInfo.size / 50000)), 4);
-		const items: Item[] = [];
-
-		for (let i = 0; i < numItems; i++) {
-			const sample = sampleItems[i % sampleItems.length];
-			// Add some randomness to prices
-			const randomPrice = (sample.price + (Math.random() * 5 - 2.5)).toFixed(2);
-			items.push({
-				id: `ocr${Date.now()}_${i}`,
-				name: sample.name,
-				price: parseFloat(randomPrice),
-				userIds: existing.users.map((u: any) => u.id),
-				splitType: 'equal',
-			});
-		}
-
-		await Bills.updateAsync(billId, { $push: { items: { $each: items } }, $set: { updatedAt: new Date() } });
-		return { itemCount: items.length, totalAmount: items.reduce((sum, item) => sum + item.price, 0).toFixed(2) };
-	},
-});
-
-// Clear all data method
-Meteor.methods({
+	/**
+	 * Clear all bills and users from the database
+	 * WARNING: This is a destructive operation
+	 * TODO: Add authentication check before allowing in production
+	 * @returns {Promise<{success: boolean}>}
+	 */
 	async 'clearAllData'() {
-		// Only allow in development or with proper authentication
-		// In production, you might want to add user authentication check here
-
 		// Import GlobalUsers to clear it too
 		const { GlobalUsers } = await import('./users');
 
@@ -588,7 +505,6 @@ Meteor.methods({
 		// Remove all global users
 		await GlobalUsers.removeAsync({});
 
-		console.log('All data cleared from database (bills and users)');
 		return { success: true };
 	},
 });

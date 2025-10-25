@@ -67,12 +67,11 @@ Template.BillDetail.events({
 			return;
 		}
 		const id = FlowRouter.getParam('id');
-		Meteor.call('bills.remove', id, (err) => {
-			if (err) {
-				pushAlert('error', 'Could not delete receipt: ' + (err.reason || err.message));
-			} else {
-				FlowRouter.go('/history');
-			}
-		});
+		try {
+			await Meteor.callAsync('bills.remove', id);
+			FlowRouter.go('/history');
+		} catch (err) {
+			pushAlert('error', 'Could not delete receipt: ' + (err.reason || err.message));
+		}
 	},
 });

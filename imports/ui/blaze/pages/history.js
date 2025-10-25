@@ -87,24 +87,22 @@ Template.History.events({
 		if (!ok) {
 			return;
 		}
-		let completed = 0;
+
 		let errors = 0;
-		selected.forEach(id => {
-			Meteor.call('bills.remove', id, err => {
-				completed++;
-				if (err) {
-					errors++;
-				}
-				if (completed === selected.length) {
-					tpl.selectedReceipts.set([]);
-					if (!errors) {
-						pushAlert('success', `Deleted ${count} receipt${count > 1 ? 's' : ''}`);
-					} else {
-						pushAlert('error', `Failed to delete ${errors} receipt${errors > 1 ? 's' : ''}`);
-					}
-				}
-			});
-		});
+		for (const id of selected) {
+			try {
+				await Meteor.callAsync('bills.remove', id);
+			} catch (_err) {
+				errors++;
+			}
+		}
+
+		tpl.selectedReceipts.set([]);
+		if (!errors) {
+			pushAlert('success', `Deleted ${count} receipt${count > 1 ? 's' : ''}`);
+		} else {
+			pushAlert('error', `Failed to delete ${errors} receipt${errors > 1 ? 's' : ''}`);
+		}
 	},
 	async 'click .delete-single-btn'(e, tpl) {
 		const id = e.currentTarget.getAttribute('data-id');

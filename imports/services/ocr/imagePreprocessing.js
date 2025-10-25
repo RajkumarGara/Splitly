@@ -11,15 +11,11 @@ export class ImagePreprocessor {
 	 * @returns {HTMLCanvasElement} - Processed canvas
 	 */
 	static preprocessForOCR(canvas, options = {}) {
-		const {
-			skipThreshold = false, // Skip aggressive thresholding for color images
-		} = options;
+		const { skipThreshold = false } = options;
 
 		const ctx = canvas.getContext('2d', { willReadFrequently: true });
 		const width = canvas.width;
 		const height = canvas.height;
-
-		// Get image data
 		const imageData = ctx.getImageData(0, 0, width, height);
 		const pixels = imageData.data;
 
@@ -28,14 +24,11 @@ export class ImagePreprocessor {
 		this._enhanceContrast(pixels);
 		this._sharpenImage(pixels, width, height);
 
-		// Only apply threshold if needed (can be too aggressive)
 		if (!skipThreshold) {
 			this._applyAdaptiveThreshold(pixels, width, height);
 		}
 
-		// Put processed image back
 		ctx.putImageData(imageData, 0, 0);
-
 		return canvas;
 	}
 
