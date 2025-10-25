@@ -118,5 +118,3 @@ Template.Analysis.events({
 		t.filter.set([]);
 	},
 });
-
-export { computeGlobalAnalytics };

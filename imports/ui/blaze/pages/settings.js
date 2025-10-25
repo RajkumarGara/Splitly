@@ -60,7 +60,7 @@ Template.Settings.events({
 			// Clear IndexedDB cache
 			if (window.indexedDB) {
 				try {
-					await window.indexedDB.deleteDatabase('splitly-bills');
+					await window.indexedDB.deleteDatabase('splitly_local');
 				} catch (err) {
 					console.error('Error clearing IndexedDB:', err);
 				}

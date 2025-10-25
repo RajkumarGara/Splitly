@@ -88,8 +88,7 @@ Template.Dashboard.events({
 		try {
 			const modal = new window.bootstrap.Modal(modalEl);
 			modal.show();
-		} catch (error) {
-			console.error('Error opening modal:', error);
+		} catch (_error) {
 			pushAlert('error', 'Failed to open modal');
 		}
 	},
@@ -142,12 +141,12 @@ async function handleFileUpload(e, tpl) {
 		fileName.endsWith('.heic') || fileName.endsWith('.heif');
 
 	if (isHEIC) {
-		pushAlert('warning', 'HEIC format detected. Please convert to JPEG first.');
+		pushAlert('warning', 'HEIC format not supported. Please convert to JPEG/PNG first.');
 		e.target.value = '';
 		return;
 	}
 	if (!file.type.startsWith('image/')) {
-		pushAlert('error', 'Please upload an image file');
+		pushAlert('error', 'Please select an image file (JPEG, PNG, etc.)');
 		e.target.value = '';
 		return;
 	}
@@ -155,10 +154,10 @@ async function handleFileUpload(e, tpl) {
 	tpl.ocrProcessing.set(true);
 	tpl.ocrProgress.set(0);
 	tpl.actionLock = true;
-	pushAlert('info', 'Reading receipt with OCR...');
+	pushAlert('info', 'Scanning receipt...');
 
 	try {
-		// Convert file to data URL for OCR service
+		// Convert file to data URL
 		tpl.ocrProgress.set(5);
 		const reader = new window.FileReader();
 		const imageData = await new Promise((resolve, reject) => {
@@ -168,8 +167,7 @@ async function handleFileUpload(e, tpl) {
 		});
 		tpl.ocrProgress.set(10);
 
-		// Use OCR service with multiple strategies and progress callback
-		// Only allow progress to increase, never decrease
+		// Run OCR with progress tracking
 		const result = await ocrService.recognizeText(imageData, (progress) => {
 			const currentProgress = tpl.ocrProgress.get();
 			if (progress > currentProgress) {
@@ -181,16 +179,17 @@ async function handleFileUpload(e, tpl) {
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
 			tpl.actionLock = false;
-			pushAlert('error', 'Could not read receipt. Please try again or enter items manually.');
+			pushAlert('error', 'Could not read receipt clearly. Please try:\n• Better lighting\n• Clearer photo\n• Or enter items manually');
 			e.target.value = '';
 			return;
 		}
 
 		try {
-			// Ensure we're at least at 75%
+			// Create bill
 			if (tpl.ocrProgress.get() < 75) {
 				tpl.ocrProgress.set(75);
 			}
+
 			const billId = await Meteor.callAsync('bills.insert', {
 				createdAt: new Date(),
 				users: GlobalUsers.find().fetch().map(u => ({ id: u._id, name: u.name })),
@@ -200,35 +199,35 @@ async function handleFileUpload(e, tpl) {
 			try {
 				tpl.ocrProgress.set(85);
 				const count = await Meteor.callAsync('ocr.extract', billId, result.text);
+
 				tpl.ocrProgress.set(100);
 				tpl.ocrProcessing.set(false);
 				tpl.ocrProgress.set(0);
 				tpl.actionLock = false;
 
 				if (count > 0) {
-					pushAlert('success', `Extracted ${count} item${count > 1 ? 's' : ''}!`);
+					pushAlert('success', `Found ${count} item${count > 1 ? 's' : ''}!`);
 				} else {
-					pushAlert('warning', 'No items found. Please add items manually.');
+					pushAlert('warning', 'No items detected. Please add items manually.');
 				}
 				FlowRouter.go(`/split/${billId}`);
-			} catch (err2) {
+			} catch (_err2) {
 				tpl.ocrProcessing.set(false);
 				tpl.ocrProgress.set(0);
 				tpl.actionLock = false;
-				pushAlert('error', err2.reason || 'Could not parse items from receipt');
+				pushAlert('error', 'Error extracting items. Please try again or add manually.');
 			}
-		} catch (err) {
+		} catch (_err) {
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
 			tpl.actionLock = false;
-			pushAlert('error', err.reason || 'Failed to create bill');
+			pushAlert('error', 'Failed to create bill. Please try again.');
 		}
-	} catch (err) {
-		console.error('OCR error:', err);
+	} catch (_err) {
 		tpl.ocrProcessing.set(false);
 		tpl.ocrProgress.set(0);
 		tpl.actionLock = false;
-		pushAlert('error', 'OCR failed to read the image');
+		pushAlert('error', 'Failed to process image. Please try again.');
 	} finally {
 		e.target.value = '';
 	}

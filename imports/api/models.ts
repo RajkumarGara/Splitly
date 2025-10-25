@@ -1,13 +1,48 @@
+/**
+ * Data models and types for Splitly application
+ */
+
+/**
+ * User profile within a bill
+ */
 export interface UserProfile {
 	id: string;
 	name: string;
 	contact?: string;
 	preferences?: Record<string, unknown>;
 }
+
+/**
+ * Item split type
+ */
 export type SplitType = 'equal' | 'percent' | 'fixed';
-export interface ItemSplitSharePercent { userId: string; type: 'percent'; value: number; }
-export interface ItemSplitShareFixed { userId: string; type: 'fixed'; value: number; }
+
+/**
+ * Percentage-based split share
+ */
+export interface ItemSplitSharePercent {
+	userId: string;
+	type: 'percent';
+	value: number;
+}
+
+/**
+ * Fixed amount split share
+ */
+export interface ItemSplitShareFixed {
+	userId: string;
+	type: 'fixed';
+	value: number;
+}
+
+/**
+ * Union type for split shares
+ */
 export type ItemSplitShare = ItemSplitSharePercent | ItemSplitShareFixed;
+
+/**
+ * Bill item
+ */
 export interface Item {
 	id: string;
 	name: string;
@@ -16,18 +51,51 @@ export interface Item {
 	splitType?: SplitType;
 	shares?: ItemSplitShare[]; // for percent/fixed
 }
+
+/**
+ * Bill document stored in database
+ */
 export interface BillDoc {
 	_id?: string;
 	createdAt: Date;
 	updatedAt?: Date;
-	date?: string;
+	date?: string; // Receipt date from OCR
+	storeName?: string; // Detected store name
 	users: UserProfile[];
 	items: Item[];
+	receiptTotal?: number | null; // Subtotal from receipt
+	calculatedTotal?: number; // Calculated from items
+	totalMismatch?: boolean; // If receipt vs calculated differs
+	taxAmount?: number;
+	totalAmount?: number | null; // Total from receipt
+	calculatedWithTax?: number; // Calculated total + tax
+	totalWithTaxMismatch?: boolean; // If receipt total vs calculated differs
 	currency?: string;
 }
-export interface ExpenseSummaryEntry { userId: string; amount: number; }
-export interface ExpenseSummary { billId: string; grandTotal: number; perUser: ExpenseSummaryEntry[]; }
 
+/**
+ * Expense summary entry for a user
+ */
+export interface ExpenseSummaryEntry {
+	userId: string;
+	amount: number;
+}
+
+/**
+ * Complete expense summary for a bill
+ */
+export interface ExpenseSummary {
+	billId: string;
+	grandTotal: number;
+	perUser: ExpenseSummaryEntry[];
+}
+
+/**
+ * Compute expense summary for a bill
+ * Calculates how much each user owes based on item assignments and split types
+ * @param bill - Bill document
+ * @returns Expense summary with per-user amounts
+ */
 export function computeExpenseSummary(bill: BillDoc): ExpenseSummary {
 	const perUserMap = new Map<string, number>();
 	let grandTotal = 0;
