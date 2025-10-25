@@ -45,8 +45,8 @@ Template.Settings.events({
 			'Are you sure you want to clear all data?\n\nThis will permanently delete:\n\n• All receipts and bills\n• All items\n• All people\n• All analytics data\n• IndexedDB cache\n\nThis action CANNOT be undone!',
 			{
 				okText: 'Yes, Delete Everything',
-				cancelText: 'Cancel'
-			}
+				cancelText: 'Cancel',
+			},
 		);
 
 		if (!confirmed) {
@@ -60,13 +60,11 @@ Template.Settings.events({
 			// Clear IndexedDB cache
 			if (window.indexedDB) {
 				try {
-					await indexedDB.deleteDatabase('splitly-bills');
+					await window.indexedDB.deleteDatabase('splitly-bills');
 				} catch (err) {
 					console.error('Error clearing IndexedDB:', err);
 				}
-			}
-
-			// Clear localStorage preferences (optional - keeping settings intact)
+			}			// Clear localStorage preferences (optional - keeping settings intact)
 			// localStorage.clear();
 
 			pushAlert('success', 'All data has been cleared successfully');

@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './styles/global.css';
 // Import Bootstrap components individually to ensure they're available
 import { Modal, Collapse, Dropdown } from 'bootstrap';
 import { Meteor } from 'meteor/meteor';
