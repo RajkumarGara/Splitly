@@ -56,6 +56,7 @@ Template.Dashboard.onCreated(function () {
 	// Reactive variables
 	this.ocrProcessing = new ReactiveVar(false);
 	this.ocrProgress = new ReactiveVar(0);
+	this.ocrStatus = new ReactiveVar('');
 	this.showHelpInfo = new ReactiveVar(
 		localStorage.getItem('splitly_showHelp') !== 'false',
 	);
@@ -107,6 +108,9 @@ Template.Dashboard.helpers({
 	},
 	ocrProgress() {
 		return Template.instance().ocrProgress.get();
+	},
+	ocrStatus() {
+		return Template.instance().ocrStatus.get() || 'Processing receipt...';
 	},
 });
 
@@ -188,12 +192,14 @@ async function handleFileUpload(e, tpl) {
 
 	tpl.ocrProcessing.set(true);
 	tpl.ocrProgress.set(0);
+	tpl.ocrStatus.set('Loading image...');
 	tpl.actionLock = true;
 	pushAlert('info', 'Scanning receipt...');
 
 	try {
 		// Convert file to data URL
 		tpl.ocrProgress.set(5);
+		tpl.ocrStatus.set('Reading image file...');
 		const reader = new window.FileReader();
 		let imageData = await new Promise((resolve, reject) => {
 			reader.onload = (e) => resolve(e.target.result);
@@ -203,11 +209,13 @@ async function handleFileUpload(e, tpl) {
 		tpl.ocrProgress.set(10);
 
 		// Compress image for faster processing (reduces API time by 30-50%)
+		tpl.ocrStatus.set('Optimizing image...');
 		imageData = await compressImage(imageData, 1600, 0.85);
 		tpl.ocrProgress.set(15);
 
 		// Run OCR with progress tracking
 		tpl.ocrProgress.set(20);
+		tpl.ocrStatus.set('Creating bill...');
 
 		// Try Gemini AI first (faster and more accurate)
 		try {
@@ -217,12 +225,14 @@ async function handleFileUpload(e, tpl) {
 				items: [],
 			});
 
-			tpl.ocrProgress.set(40);
+			tpl.ocrProgress.set(30);
+			tpl.ocrStatus.set('🤖 Analyzing receipt with AI...');
 
 			// Try Gemini extraction
 			const count = await Meteor.callAsync('ocr.extractFromImage', billId, imageData);
 
 			tpl.ocrProgress.set(100);
+			tpl.ocrStatus.set('✅ Receipt processed!');
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
 			tpl.actionLock = false;
@@ -238,19 +248,30 @@ async function handleFileUpload(e, tpl) {
 		} catch (geminiError) {
 			console.log('Gemini not available, falling back to Tesseract:', geminiError.error);
 			tpl.ocrProgress.set(20);
+			tpl.ocrStatus.set('⚠️ Switching to backup OCR...');
 		}
 
 		// Fallback: Use Tesseract
+		tpl.ocrStatus.set('📝 Reading receipt text...');
 		const result = await ocrService.recognizeText(imageData, (progress) => {
 			const currentProgress = tpl.ocrProgress.get();
 			if (progress > currentProgress) {
 				tpl.ocrProgress.set(progress);
+				// Update status based on progress
+				if (progress < 30) {
+					tpl.ocrStatus.set('📝 Scanning receipt...');
+				} else if (progress < 60) {
+					tpl.ocrStatus.set('🔍 Recognizing text...');
+				} else {
+					tpl.ocrStatus.set('📊 Extracting items...');
+				}
 			}
 		});
 
 		if (!result.success) {
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
+			tpl.ocrStatus.set('');
 			tpl.actionLock = false;
 			pushAlert('error', 'Could not read receipt clearly. Please try:\n• Better lighting\n• Clearer photo\n• Or enter items manually');
 			e.target.value = '';
@@ -262,6 +283,7 @@ async function handleFileUpload(e, tpl) {
 			if (tpl.ocrProgress.get() < 75) {
 				tpl.ocrProgress.set(75);
 			}
+			tpl.ocrStatus.set('💾 Saving data...');
 
 			const billId = await Meteor.callAsync('bills.insert', {
 				createdAt: new Date(),
@@ -271,9 +293,11 @@ async function handleFileUpload(e, tpl) {
 
 			try {
 				tpl.ocrProgress.set(85);
+				tpl.ocrStatus.set('🛒 Extracting items...');
 				const count = await Meteor.callAsync('ocr.extract', billId, result.text);
 
 				tpl.ocrProgress.set(100);
+				tpl.ocrStatus.set('✅ Receipt processed!');
 				tpl.ocrProcessing.set(false);
 				tpl.ocrProgress.set(0);
 				tpl.actionLock = false;
@@ -287,18 +311,21 @@ async function handleFileUpload(e, tpl) {
 			} catch (_err2) {
 				tpl.ocrProcessing.set(false);
 				tpl.ocrProgress.set(0);
+				tpl.ocrStatus.set('');
 				tpl.actionLock = false;
 				pushAlert('error', 'Error extracting items. Please try again or add manually.');
 			}
 		} catch (_err) {
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
+			tpl.ocrStatus.set('');
 			tpl.actionLock = false;
 			pushAlert('error', 'Failed to create bill. Please try again.');
 		}
 	} catch (_err) {
 		tpl.ocrProcessing.set(false);
 		tpl.ocrProgress.set(0);
+		tpl.ocrStatus.set('');
 		tpl.actionLock = false;
 		pushAlert('error', 'Failed to process image. Please try again.');
 	} finally {
