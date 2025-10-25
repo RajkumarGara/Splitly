@@ -30,6 +30,8 @@ export default [
 				setTimeout: 'readonly',
 				Blaze: 'readonly',
 				Buffer: 'readonly',
+				process: 'readonly',
+				require: 'readonly',
 			},
 		},
 		plugins: { react: reactPlugin, '@typescript-eslint': tsPlugin },

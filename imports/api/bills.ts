@@ -4,6 +4,7 @@ import { check } from 'meteor/check';
 import type { BillDoc, UserProfile, Item } from './models';
 import { parseReceiptText } from './receiptParsers';
 import { detectStoreName, extractDateFromLines } from './receiptUtils';
+import { extractReceiptWithGemini, isGeminiAvailable } from './geminiOcr';
 
 /**
  * MongoDB collection for bills
@@ -306,6 +307,76 @@ Meteor.methods({
  */
 Meteor.methods({
 	/**
+	 * Extract items from receipt image using Gemini AI
+	 * Falls back to text-based extraction if Gemini fails
+	 * @param billId - ID of the bill to add items to
+	 * @param imageData - Base64 encoded image data
+	 * @returns {Promise<number>} - Number of items extracted
+	 */
+	async 'ocr.extractFromImage'(billId: string, imageData: string) {
+		check(billId, String);
+		check(imageData, String);
+
+		const existing = await Bills.findOneAsync(billId);
+		if (!existing) {
+			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		console.log(`\n🧾 OCR Extraction Started - Bill: ${billId}`);
+
+		// Try Gemini AI first if available
+		if (isGeminiAvailable()) {
+			console.log('🤖 Using Gemini AI...');
+			const geminiResult = await extractReceiptWithGemini(imageData);
+
+			if (geminiResult.success && geminiResult.items && geminiResult.items.length > 0) {
+				const userIds = existing.users.map((u: UserProfile) => u.id);
+
+				// Convert Gemini items to our Item format
+				const items: Item[] = geminiResult.items.map((item, idx) => ({
+					id: `gemini${Date.now()}_${idx}`,
+					name: item.name,
+					price: Number(item.price.toFixed(2)),
+					userIds,
+					splitType: 'equal' as const,
+				}));
+
+				const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
+				const taxAmount = geminiResult.tax || 0;
+				const calculatedTotal = calculatedItemsTotal + taxAmount;
+
+				console.log(`✅ Extracted ${items.length} items from ${geminiResult.store || 'Receipt'}`);
+				console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
+
+				// Check for mismatches
+				const itemsTotalMismatch = geminiResult.subtotal && Math.abs(calculatedItemsTotal - geminiResult.subtotal) > 0.01;
+				const totalAmountMismatch = geminiResult.total && Math.abs(calculatedTotal - geminiResult.total) > 0.01;
+
+				if (itemsTotalMismatch || totalAmountMismatch) {
+					console.log(`⚠️  Receipt mismatch detected`);
+				}
+
+				await persistParsedReceipt(
+					billId,
+					items,
+					geminiResult.subtotal || calculatedItemsTotal,
+					taxAmount,
+					geminiResult.total || calculatedTotal,
+					geminiResult.store || 'Receipt',
+					null,
+				);
+
+				return items.length;
+			}
+
+			console.log('⚠️  Gemini failed, falling back to Tesseract...');
+		}
+
+		// Fallback: caller should use 'ocr.extract' with Tesseract text
+		throw new Meteor.Error('gemini-unavailable', 'Gemini AI not available or extraction failed. Please use Tesseract fallback.');
+	},
+
+	/**
 	 * Extract items and totals from OCR text
 	 * @param billId - ID of the bill to add items to
 	 * @param text - OCR extracted text from receipt
@@ -315,72 +386,41 @@ Meteor.methods({
 		check(billId, String);
 		check(text, String);
 
-		// Validate input
 		if (!text.trim()) {
 			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
 		}
 
-		console.log('');
-		console.log('╔═════════════════════════════════════════╗');
-		console.log('║     OCR EXTRACTION STARTED              ║');
-		console.log('╚═════════════════════════════════════════╝');
-		console.log('Bill ID:', billId);
+		console.log(`\n🧾 OCR Extraction Started (Tesseract) - Bill: ${billId}`);
 
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) {
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
 
-		console.log('');
-		console.log('━━━━━ COMPLETE OCR TEXT ━━━━━');
-		console.log(text);
-		console.log('━━━━━ END OCR TEXT ━━━━━');
-		console.log('');
-
 		const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
 		const storeName = detectStoreName(text);
 		const receiptDate = extractDateFromLines(lines);
 
-		console.log('Detected store:', storeName);
-		console.log('Detected date:', receiptDate);
+		console.log(`📍 Store: ${storeName}, Date: ${receiptDate || 'N/A'}`);
 
 		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(
 			text,
 			existing.users.map((u: UserProfile) => u.id),
 		);
 
-		// Calculate totals from extracted items
 		const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
 		const calculatedTotal = calculatedItemsTotal + taxAmount;
 
-		console.log('');
-		console.log('━━━━━ EXTRACTED ITEMS ━━━━━');
-		if (items.length > 0) {
-			items.forEach((item, idx) => {
-				console.log(`${idx + 1}. ${item.name} - $${item.price.toFixed(2)}`);
-			});
-		} else {
-			console.log('(No items found)');
-		}
-
-		console.log('');
-		console.log('━━━━━ EXTRACTED RESULTS ━━━━━');
-		console.log('Items found:', items.length);
-		console.log('Items total:', receiptTotal !== null ? `$${receiptTotal.toFixed(2)}` : 'N/A');
-		console.log('Tax:', `$${taxAmount.toFixed(2)}`);
-		console.log('Total amount:', totalAmount !== null ? `$${totalAmount.toFixed(2)}` : 'N/A');
-
-		console.log('');
-		console.log('━━━━━ CALCULATED RESULTS ━━━━━');
-		console.log('Items found:', items.length);
-		console.log('Items total:', `$${calculatedItemsTotal.toFixed(2)}`);
-		console.log('Tax:', `$${taxAmount.toFixed(2)}`);
-		console.log('Total amount:', `$${calculatedTotal.toFixed(2)}`);
+		console.log(`✅ Extracted ${items.length} items`);
+		console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
 
 		// Check for mismatches
 		const itemsTotalMismatch = receiptTotal !== null && Math.abs(calculatedItemsTotal - receiptTotal) > 0.01;
 		const totalAmountMismatch = totalAmount !== null && Math.abs(calculatedTotal - totalAmount) > 0.01;
-		const hasMismatch = itemsTotalMismatch || totalAmountMismatch;
+
+		if (itemsTotalMismatch || totalAmountMismatch) {
+			console.log(`⚠️  Receipt mismatch detected`);
+		}
 
 		if (!items.length) {
 			return 0;
@@ -396,15 +436,6 @@ Meteor.methods({
 			receiptDate,
 		);
 
-		console.log('');
-		console.log('╔═════════════════════════════════════════╗');
-		if (hasMismatch) {
-			console.log('║     OCR EXTRACTION COMPLETED ⚠️          ║');
-		} else {
-			console.log('║     OCR EXTRACTION COMPLETED ✅          ║');
-		}
-		console.log('╚═════════════════════════════════════════╝');
-		console.log('');
 		return items.length;
 	},
 });
@@ -453,70 +484,6 @@ async function persistParsedReceipt(
 		},
 	});
 }
-
-/**
- * OCR file extraction (stub for future implementation)
- * In production, this would use actual OCR service to extract text from image
- */
-Meteor.methods({
-	/**
-	 * Extract items from receipt image file
-	 * @param billId - ID of the bill
-	 * @param fileInfo - File metadata (name, size, type)
-	 * @returns {Promise<{itemCount: number, totalAmount: string}>}
-	 */
-	async 'ocr.extractFromFile'(billId: string, fileInfo: { name: string; size: number; type?: string }) {
-		check(billId, String);
-		check(fileInfo, Object);
-
-		// Validate file info
-		if (!fileInfo.name || !fileInfo.size) {
-			throw new Meteor.Error('invalid-file', 'File name and size required');
-		}
-
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
-
-		// Generate sample items based on file size (simulating OCR extraction)
-		// TODO: Replace with actual OCR service integration
-		const sampleItems = [
-			{ name: 'Main Course', price: 18.99 },
-			{ name: 'Side Dish', price: 6.50 },
-			{ name: 'Beverage', price: 3.99 },
-			{ name: 'Dessert', price: 7.50 },
-			{ name: 'Appetizer', price: 8.99 },
-		];
-
-		// Generate 2-4 items based on file size
-		const numItems = Math.min(Math.max(2, Math.floor(fileInfo.size / 50000)), 4);
-		const items: Item[] = [];
-
-		for (let i = 0; i < numItems; i++) {
-			const sample = sampleItems[i % sampleItems.length];
-			// Add some randomness to prices
-			const randomPrice = (sample.price + (Math.random() * 5 - 2.5)).toFixed(2);
-			items.push({
-				id: `ocr${Date.now()}_${i}`,
-				name: sample.name,
-				price: parseFloat(randomPrice),
-				userIds: existing.users.map((u: UserProfile) => u.id),
-				splitType: 'equal',
-			});
-		}
-
-		await Bills.updateAsync(billId, {
-			$push: { items: { $each: items } },
-			$set: { updatedAt: new Date() },
-		});
-
-		return {
-			itemCount: items.length,
-			totalAmount: items.reduce((sum, item) => sum + item.price, 0).toFixed(2),
-		};
-	},
-});
 
 /**
  * Data management methods
