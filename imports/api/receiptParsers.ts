@@ -58,7 +58,6 @@ function parseWalmartReceipt(text: string, userIds: string[]) {
 		const itemsSoldMatch = line.match(/#\s*ITEMS\s*SOLD[:\s]*(\d+)/i);
 		if (itemsSoldMatch) {
 			expectedItemCount = parseInt(itemsSoldMatch[1], 10);
-			console.log(`📋 Walmart receipt expects ${expectedItemCount} items`);
 			break;
 		}
 	}
@@ -86,9 +85,9 @@ function parseWalmartReceipt(text: string, userIds: string[]) {
 		const isQtyCalcLine = /^\d+\s+AT\s+\d+\s+FOR/i.test(line);
 
 		if (isWeightCalcLine || isQtyCalcLine) {
-			// Debug: Log skipped weight lines
+			// Skip weight calculation lines
 			if (isWeightCalcLine) {
-				console.log(`   ⏭️  Skipped weight line: "${line}"`);
+				continue;
 			}
 			continue;
 		}
@@ -158,11 +157,8 @@ function parseWalmartReceipt(text: string, userIds: string[]) {
 
 	// Validate item count against receipt's "# ITEMS SOLD"
 	if (expectedItemCount !== null && items.length !== expectedItemCount) {
-		console.log(`⚠️  Item count mismatch: Expected ${expectedItemCount}, found ${items.length} (${expectedItemCount - items.length} missing)`);
-		if (skippedLinesWithPrices.length > 0) {
-			console.log('📝 Lines with prices that were skipped:');
-			skippedLinesWithPrices.forEach(line => console.log('  ', line));
-		}
+		const diff = expectedItemCount - items.length;
+		console.error(`Item count mismatch: Expected ${expectedItemCount}, found ${items.length} (${diff} missing)`);
 	}
 
 	return finalizeReceipt(items, receiptTotal, taxAmount, totalAmount);

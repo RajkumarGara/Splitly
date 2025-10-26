@@ -510,6 +510,119 @@
 	color: var(--bs-gray-300);
 }
 
+.item-count-badge {
+	background: var(--purple-primary);
+	color: white;
+	padding: 0.25rem 0.625rem;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+[data-bs-theme="dark"] .item-count-badge {
+	background: var(--purple-dark);
+}
+
+.item-rank {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--bs-gray-200);
+	color: var(--bs-gray-700);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 0.85rem;
+	flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .item-rank {
+	background: #3d4254;
+	color: var(--bs-gray-300);
+}
+
+.top-item {
+	gap: 0.75rem;
+}
+
+/* ===== Store Breakdown ===== */
+.store-item {
+	background: var(--bs-gray-50);
+	border-radius: 10px;
+	padding: 1rem 1.25rem;
+	transition: all 0.2s ease;
+	border: 2px solid transparent;
+}
+
+[data-bs-theme="dark"] .store-item {
+	background: #252936;
+}
+
+.store-item:hover {
+	background: white;
+	border-color: rgba(99, 102, 241, 0.2);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	transform: translateX(4px);
+}
+
+[data-bs-theme="dark"] .store-item:hover {
+	background: #2d3142;
+	border-color: rgba(167, 139, 250, 0.2);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.store-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.5rem;
+}
+
+.store-name {
+	font-weight: 600;
+	color: var(--bs-gray-800);
+	font-size: 1rem;
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+[data-bs-theme="dark"] .store-name {
+	color: var(--bs-gray-200);
+}
+
+.store-total {
+	font-weight: 700;
+	font-size: 1.1rem;
+	color: var(--purple-primary);
+}
+
+[data-bs-theme="dark"] .store-total {
+	color: var(--purple-light);
+}
+
+.store-details {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.store-stat {
+	background: var(--bs-gray-200);
+	color: var(--bs-gray-700);
+	padding: 0.25rem 0.625rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+[data-bs-theme="dark"] .store-stat {
+	background: #3d4254;
+	color: var(--bs-gray-300);
+}
+
 /* ===== Empty State ===== */
 .analysis-empty-state {
 	text-align: center;

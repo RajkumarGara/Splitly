@@ -96,7 +96,7 @@ Template.Dashboard.helpers({
 			.fetch()
 			.map(b => ({
 				_id: b._id,
-				createdAt: b.createdAt.toLocaleString(),
+				createdAt: b.date || b.createdAt.toLocaleString(),
 				total: computeExpenseSummary(b).grandTotal.toFixed(2),
 				itemCount: b.items?.length || 0,
 				userCount: b.users?.length || 0,
@@ -228,27 +228,58 @@ async function handleFileUpload(e, tpl) {
 			tpl.ocrProgress.set(30);
 			tpl.ocrStatus.set('🤖 Analyzing receipt with AI...');
 
-			// Try Gemini extraction
-			const count = await Meteor.callAsync('ocr.extractFromImage', billId, imageData);
+			// Simulate progress during Gemini processing (it doesn't provide progress callbacks)
+			const progressInterval = window.setInterval(() => {
+				const current = tpl.ocrProgress.get();
+				if (current < 85) {
+					tpl.ocrProgress.set(current + 15);
+					// Update status messages during processing
+					if (current < 45) {
+						tpl.ocrStatus.set('🤖 AI reading receipt...');
+					} else if (current < 70) {
+						tpl.ocrStatus.set('📊 Extracting items...');
+					} else {
+						tpl.ocrStatus.set('💰 Calculating totals...');
+					}
+				}
+			}, 800); // Update every 0.8 seconds for smoother progress
 
-			tpl.ocrProgress.set(100);
-			tpl.ocrStatus.set('✅ Receipt processed!');
+			try {
+				// Try Gemini extraction
+				const count = await Meteor.callAsync('ocr.extractFromImage', billId, imageData);
+
+				// Clear progress interval
+				window.clearInterval(progressInterval);
+
+				tpl.ocrProgress.set(100);
+				tpl.ocrStatus.set('✅ Receipt processed!');
+				tpl.ocrProcessing.set(false);
+				tpl.ocrProgress.set(0);
+				tpl.actionLock = false;
+
+				if (count > 0) {
+					pushAlert('success', `✨ AI found ${count} item${count > 1 ? 's' : ''}!`);
+				} else {
+					pushAlert('warning', 'No items detected. Please add items manually.');
+				}
+				FlowRouter.go(`/split/${billId}`);
+				e.target.value = '';
+				return;
+			} catch (_geminiError) {
+				// Clear progress interval on error
+				window.clearInterval(progressInterval);
+				// Gemini not available, falling back to Tesseract
+				tpl.ocrProgress.set(20);
+				tpl.ocrStatus.set('⚠️ Switching to backup OCR...');
+			}
+		} catch (_outerError) {
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
+			tpl.ocrStatus.set('');
 			tpl.actionLock = false;
-
-			if (count > 0) {
-				pushAlert('success', `✨ AI found ${count} item${count > 1 ? 's' : ''}!`);
-			} else {
-				pushAlert('warning', 'No items detected. Please add items manually.');
-			}
-			FlowRouter.go(`/split/${billId}`);
+			pushAlert('error', 'Failed to create bill. Please try again.');
 			e.target.value = '';
 			return;
-		} catch (geminiError) {
-			console.log('Gemini not available, falling back to Tesseract:', geminiError.error);
-			tpl.ocrProgress.set(20);
-			tpl.ocrStatus.set('⚠️ Switching to backup OCR...');
 		}
 
 		// Fallback: Use Tesseract

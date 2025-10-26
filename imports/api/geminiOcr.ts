@@ -16,7 +16,7 @@ function normalizeStoreName(storeName: string): string {
 
 	// Pattern-based matching for flexible store name recognition
 	const storePatterns = [
-		{ pattern: /HALAL/i, name: 'Halal Market' },
+		{ pattern: /HALAL/i, name: 'Halal' },
 		{ pattern: /COSTCO/i, name: 'Costco' },
 		{ pattern: /WAL[-\s*]?MART/i, name: 'Walmart' },
 		{ pattern: /TARGET/i, name: 'Target' },
@@ -45,14 +45,14 @@ function normalizeStoreName(storeName: string): string {
 function estimateStartingTokens(base64Image: string): number {
 	// Remove data URI prefix if present
 	const imageData = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
-	
+
 	// Estimate based on image size (larger image = more items likely)
 	const sizeKB = (imageData.length * 3) / 4 / 1024;
-	
+
 	// Start with appropriate tier, leaving room to scale up if needed
-	if (sizeKB < 100) return 2048;  // Small receipt
-	if (sizeKB < 300) return 4096;  // Medium receipt
-	if (sizeKB < 600) return 6144;  // Large receipt
+	if (sizeKB < 100) {return 2048;}  // Small receipt
+	if (sizeKB < 300) {return 4096;}  // Medium receipt
+	if (sizeKB < 600) {return 6144;}  // Large receipt
 	return 8192;  // Extra large receipt
 }
 
@@ -66,10 +66,11 @@ function estimateStartingTokens(base64Image: string): number {
 async function extractWithTokens(
 	base64Image: string,
 	maxTokens: number,
-	attempt: number = 1
+	attempt: number = 1,
 ): Promise<{
 	success: boolean;
 	store?: string;
+	date?: string;
 	items?: Array<{ name: string; price: number }>;
 	subtotal?: number;
 	tax?: number;
@@ -105,9 +106,10 @@ Rules:
 - Apply discounts (lines with "-")
 - Skip quantity calculations
 - Get subtotal, tax, total
+- Extract date and time from receipt (MUST include AM/PM if present)
 
 Format:
-{"store":"Name","items":[{"name":"Item","price":12.99}],"subtotal":100.00,"tax":1.33,"total":101.33}`;
+{"store":"Name","date":"MM/DD/YYYY HH:MM:SS AM/PM","items":[{"name":"Item","price":12.99}],"subtotal":100.00,"tax":1.33,"total":101.33}`;
 
 	const result = await model.generateContent([
 		prompt,
@@ -122,26 +124,23 @@ Format:
 	// Check for blocked content or safety issues
 	const candidates = result.response.candidates;
 	if (!candidates || candidates.length === 0) {
-		console.error('   ⚠️  No candidates in response. Full response:', JSON.stringify(result.response, null, 2));
 		throw new Error('No response candidates from Gemini API');
 	}
 
 	const finishReason = candidates[0].finishReason;
-	
+
 	// Handle MAX_TOKENS with adaptive retry
 	if (finishReason === 'MAX_TOKENS') {
 		const nextTokens = Math.min(maxTokens * 2, 8192);
-		
+
 		if (nextTokens > maxTokens && attempt < 3) {
-			console.log(`   ⚠️  Hit ${maxTokens} token limit, retrying with ${nextTokens} tokens (attempt ${attempt + 1})...`);
 			return extractWithTokens(base64Image, nextTokens, attempt + 1);
 		} else {
 			throw new Error('Response exceeded max tokens even at 8192 (receipt too complex)');
 		}
 	}
-	
+
 	if (finishReason !== 'STOP') {
-		console.error(`   ⚠️  Unexpected finish reason: ${finishReason}`);
 		if (finishReason === 'SAFETY') {
 			throw new Error('Content blocked by safety filters');
 		}
@@ -157,8 +156,7 @@ Format:
 
 	// Validate JSON before parsing
 	if (!jsonText || jsonText.length < 10) {
-		console.error('   ⚠️  Empty response. Raw response:', response);
-		throw new Error(`Empty or invalid response from Gemini: "${jsonText}"`);
+		throw new Error('Empty or invalid response from Gemini');
 	}
 
 	const data = JSON.parse(jsonText);
@@ -174,6 +172,7 @@ Format:
 	return {
 		success: true,
 		store: normalizedStore,
+		date: data.date || null,
 		items: data.items,
 		subtotal: data.subtotal || null,
 		tax: data.tax || 0,
@@ -189,6 +188,7 @@ Format:
 export async function extractReceiptWithGemini(base64Image: string): Promise<{
 	success: boolean;
 	store?: string;
+	date?: string;
 	items?: Array<{ name: string; price: number }>;
 	subtotal?: number;
 	tax?: number;
@@ -198,27 +198,16 @@ export async function extractReceiptWithGemini(base64Image: string): Promise<{
 	const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
 	if (!apiKey) {
-		console.log('⚠️  Gemini API key not found, skipping AI extraction');
 		return { success: false, error: 'API key not configured' };
 	}
 
 	try {
-		console.log('🤖 Starting Gemini AI extraction...');
-		const startTime = Date.now();
-
 		// Estimate optimal starting tokens based on image size
 		const startingTokens = estimateStartingTokens(base64Image);
-		console.log(`   📊 Starting with ${startingTokens} max tokens`);
-
 		const result = await extractWithTokens(base64Image, startingTokens);
-
-		const elapsed = Date.now() - startTime;
-		console.log(`   ⏱️  Gemini processing time: ${(elapsed / 1000).toFixed(2)}s`);
-		console.log(`   ✅ Gemini extracted ${result.items?.length || 0} items`);
-
 		return result;
 	} catch (error) {
-		console.error(`   ❌ Gemini extraction failed:`, error);
+		console.error('Gemini extraction failed:', error instanceof Error ? error.message : 'Unknown error');
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : 'Unknown error',

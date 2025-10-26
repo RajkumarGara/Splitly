@@ -80,8 +80,8 @@
 					{{/each}}
 				</div>
 			</div>
-			<!-- Monthly Trend & Top Items -->
-			<div class="row g-4">
+			<!-- Monthly Trend & Insights -->
+			<div class="row g-4 mb-4">
 				<div class="col-md-6">
 					<div class="analysis-section">
 						<div class="section-header">
@@ -107,17 +107,69 @@
 					<div class="analysis-section">
 						<div class="section-header">
 							<h5 class="section-title">
-								<i class="bi bi-star-fill"></i>
-								Top Items
+								<i class="bi bi-shop"></i>
+								Store Breakdown
 							</h5>
 						</div>
 						<div class="top-items-list">
-							{{#each topItems}}
+							{{#each storeBreakdown}}
+								<div class="store-item">
+									<div class="store-header">
+										<div class="store-name" title="{{name}}">{{name}}</div>
+										<div class="store-total">${{total}}</div>
+									</div>
+									<div class="store-details">
+										<span class="store-stat">{{count}} visits</span>
+										<span class="store-stat">{{itemCount}} items</span>
+										<span class="store-stat">${{avgPerVisit}}/visit</span>
+									</div>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Most Valuable & Most Frequent Items -->
+			<div class="row g-4">
+				<div class="col-md-6">
+					<div class="analysis-section">
+						<div class="section-header">
+							<h5 class="section-title">
+								<i class="bi bi-cash-coin"></i>
+								Most Valuable Items
+							</h5>
+						</div>
+						<div class="top-items-list">
+							{{#each mostValuable}}
 								<div class="top-item">
+									<div class="item-rank">{{incIndex @index}}</div>
 									<div class="item-name" title="{{name}}">{{name}}</div>
 									<div class="item-details">
 										<span class="item-value">${{total}}</span>
 										<span class="item-count">×{{count}}</span>
+									</div>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="analysis-section">
+						<div class="section-header">
+							<h5 class="section-title">
+								<i class="bi bi-star-fill"></i>
+								Most Purchased Items
+							</h5>
+						</div>
+						<div class="top-items-list">
+							{{#each mostFrequent}}
+								<div class="top-item">
+									<div class="item-rank">{{incIndex @index}}</div>
+									<div class="item-name" title="{{name}}">{{name}}</div>
+									<div class="item-details">
+										<span class="item-count-badge">×{{count}}</span>
+										<span class="item-value">${{total}}</span>
 									</div>
 								</div>
 							{{/each}}
