@@ -1,11 +1,11 @@
-/* Dashboard Simplified Styles */
+/* Dashboard Styles */
 
-/* Progress Bar - Purple Theme */
+/* ===== Progress Bar ===== */
 .progress-bar-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%) !important;
 }
 
-/* Action Buttons Card */
+/* ===== Action Buttons Card ===== */
 .action-buttons-card {
 	background: white;
 	border-radius: 16px;
@@ -15,6 +15,12 @@
 	margin-bottom: 1.5rem;
 }
 
+[data-bs-theme="dark"] .action-buttons-card {
+	background: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
 .action-buttons-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -22,6 +28,7 @@
 	margin-bottom: 1.25rem;
 }
 
+/* ===== Action Buttons ===== */
 .action-button {
 	width: 100%;
 	background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
@@ -39,9 +46,19 @@
 	overflow: hidden;
 }
 
+[data-bs-theme="dark"] .action-button {
+	background: linear-gradient(135deg, #252936 0%, #2d3142 100%);
+	border-color: var(--bs-gray-700);
+}
+
 .action-button-primary {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-	border-color: #6366f1;
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
+	border-color: var(--purple-primary);
+}
+
+[data-bs-theme="dark"] .action-button-primary {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	border-color: var(--purple-dark);
 }
 
 .action-button-primary .action-icon {
@@ -70,8 +87,17 @@
 	transform: translateY(-2px);
 }
 
+[data-bs-theme="dark"] .action-button:hover {
+	border-color: var(--bs-gray-600);
+	box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+}
+
 .action-button-primary:hover {
 	box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
+[data-bs-theme="dark"] .action-button-primary:hover {
+	box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
 }
 
 .action-button:hover::before {
@@ -90,7 +116,7 @@
 .action-icon {
 	width: 64px;
 	height: 64px;
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	border-radius: 14px;
 	display: flex;
 	align-items: center;
@@ -100,17 +126,26 @@
 	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+[data-bs-theme="dark"] .action-icon {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
 .action-label {
 	font-size: 1rem;
 	font-weight: 600;
 	color: #4338ca;
 }
 
-/* Manage People Button */
+[data-bs-theme="dark"] .action-label {
+	color: #c4b5fd;
+}
+
+/* ===== Manage People Button ===== */
 .manage-people-btn {
 	width: 100%;
 	background: white;
-	border: 2px solid #e5e7eb;
+	border: 2px solid var(--bs-gray-300);
 	border-radius: 12px;
 	padding: 1rem 1.5rem;
 	display: flex;
@@ -119,15 +154,27 @@
 	gap: 0.5rem;
 	font-size: 1rem;
 	font-weight: 600;
-	color: #6b7280;
+	color: var(--bs-gray-600);
 	cursor: pointer;
 	transition: all 0.2s ease;
 }
 
+[data-bs-theme="dark"] .manage-people-btn {
+	background: #252936;
+	border-color: var(--bs-gray-700);
+	color: var(--bs-gray-400);
+}
+
 .manage-people-btn:hover {
-	background: #f9fafb;
-	border-color: #d1d5db;
-	color: #374151;
+	background: var(--bs-light);
+	border-color: var(--bs-gray-400);
+	color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .manage-people-btn:hover {
+	background: #2d3142;
+	border-color: var(--bs-gray-600);
+	color: var(--bs-gray-300);
 }
 
 .manage-people-btn:active {
@@ -138,12 +185,18 @@
 	font-size: 1.25rem;
 }
 
-/* Card Enhancements */
+/* ===== Card Enhancements ===== */
 .card {
 	border-radius: 16px;
 	border: 1px solid rgba(0, 0, 0, 0.05);
 	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 	background: white;
+}
+
+[data-bs-theme="dark"] .card {
+	background: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .card-header {
@@ -153,12 +206,28 @@
 	background: white;
 }
 
-/* List Group Items */
+[data-bs-theme="dark"] .card-header {
+	background: var(--bs-dark);
+	border-bottom-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .card-header.bg-light,
+[data-bs-theme="dark"] .card-header.bg-white {
+	background: var(--bs-dark) !important;
+}
+
+/* ===== List Group Items ===== */
 .list-group-item {
 	border-left: none;
 	border-right: none;
 	transition: all 0.2s ease;
 	padding: 1.25rem 1.5rem;
+}
+
+[data-bs-theme="dark"] .list-group-item {
+	background: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+	color: var(--bs-gray-200);
 }
 
 .list-group-item:first-child {
@@ -171,59 +240,30 @@
 }
 
 .list-group-item:hover {
-	background-color: #f8f9fb;
+	background-color: var(--bs-light);
 	transform: translateX(4px);
 }
 
-/* Badge Styling */
+[data-bs-theme="dark"] .list-group-item:hover {
+	background-color: #252936;
+}
+
+/* ===== Badge Styling ===== */
 .badge.bg-light {
-	border: 1px solid #e5e7eb;
+	border: 1px solid var(--bs-gray-300);
 	display: block;
 	padding: 0.375rem 0.625rem;
 	font-weight: 500;
 	border-radius: 6px;
 }
 
-/* Responsive Design */
-@media (max-width: 576px) {
-	.action-buttons-card {
-		padding: 1.5rem;
-	}
-	
-	.action-button {
-		padding: 1.5rem 0.75rem;
-	}
-	
-	.action-icon {
-		width: 48px;
-		height: 48px;
-		font-size: 1.5rem;
-	}
-	
-	.action-label {
-		font-size: 0.9rem;
-	}
-	
-	.manage-people-btn {
-		padding: 0.875rem 1.25rem;
-		font-size: 0.95rem;
-	}
+[data-bs-theme="dark"] .badge.bg-light {
+	background: #2d3142 !important;
+	border-color: var(--bs-gray-700);
+	color: var(--bs-gray-400) !important;
 }
 
-@media (min-width: 768px) {
-	.action-button {
-		padding: 2.5rem 1.5rem;
-	}
-	
-	.action-icon {
-		width: 64px;
-		height: 64px;
-		font-size: 2rem;
-	}
-}
-
-
-/* Fullscreen Camera Styles */
+/* ===== Camera Fullscreen ===== */
 .camera-fullscreen {
 	position: fixed;
 	top: 0;
@@ -252,16 +292,7 @@
 	background: #000;
 }
 
-.edge-overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	pointer-events: none;
-	z-index: 2;
-}
-
+/* ===== Camera Scan Hint ===== */
 .scan-hint {
 	position: absolute;
 	top: 2rem;
@@ -287,7 +318,7 @@
 
 .scan-hint-text i {
 	font-size: 1.75rem;
-	color: #20c997;
+	color: var(--bs-teal);
 }
 
 .scan-hint-text span {
@@ -301,8 +332,12 @@
 }
 
 @keyframes pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.7; }
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
 }
 
 .captured-preview {
@@ -312,13 +347,14 @@
 	background: #000;
 }
 
+/* ===== Camera Controls ===== */
 .camera-controls {
 	position: absolute;
 	bottom: 0;
 	left: 0;
 	right: 0;
 	padding: 2rem 1.5rem 3rem;
-	background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%);
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
@@ -337,7 +373,7 @@
 
 .camera-btn.btn-success {
 	background: rgba(25, 135, 84, 0.95);
-	border-color: rgba(25, 135, 84, 1);
+	border-color: var(--bs-success);
 }
 
 .camera-btn.btn-outline-light {
@@ -355,13 +391,13 @@
 .camera-btn.btn-outline-danger {
 	background: rgba(220, 53, 69, 0.1);
 	border-color: rgba(220, 53, 69, 0.8);
-	color: #dc3545;
+	color: var(--bs-danger);
 }
 
 .camera-btn.btn-outline-danger:hover {
 	background: rgba(220, 53, 69, 0.2);
-	border-color: #dc3545;
-	color: #dc3545;
+	border-color: var(--bs-danger);
+	color: var(--bs-danger);
 }
 
 .camera-btn-capture {
@@ -375,9 +411,9 @@
 	align-items: center;
 	justify-content: center;
 	background: white !important;
-	color: #198754 !important;
+	color: var(--bs-success) !important;
 	border: 5px solid white !important;
-	box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.3);
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.3);
 	transition: transform 0.1s ease;
 }
 
@@ -390,23 +426,24 @@
 	transform: scale(0.95);
 }
 
+/* ===== Camera Overlay ===== */
 .camera-overlay {
 	position: absolute;
 	bottom: 0;
 	left: 0;
 	right: 0;
 	padding: 2rem 1.5rem 3rem;
-	background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 60%, transparent 100%);
 }
 
 .camera-overlay .progress {
-	background: rgba(255,255,255,0.2);
+	background: rgba(255, 255, 255, 0.2);
 	border-radius: 8px;
 	overflow: hidden;
 }
 
 .camera-overlay .progress-bar {
-	background: linear-gradient(90deg, #198754 0%, #20c997 100%);
+	background: linear-gradient(90deg, var(--bs-success) 0%, var(--bs-teal) 100%);
 }
 
 .camera-overlay p {
@@ -414,7 +451,6 @@
 	font-size: 1.1rem;
 }
 
-/* Camera Hint */
 .camera-hint {
 	position: absolute;
 	top: 2rem;
@@ -437,4 +473,42 @@
 
 .camera-hint i {
 	font-size: 1.2rem;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 576px) {
+	.action-buttons-card {
+		padding: 1.5rem;
+	}
+	
+	.action-button {
+		padding: 1.5rem 0.75rem;
+	}
+	
+	.action-icon {
+		width: 56px;
+		height: 56px;
+		font-size: 1.75rem;
+	}
+	
+	.action-label {
+		font-size: 0.95rem;
+	}
+	
+	.manage-people-btn {
+		padding: 0.875rem 1.25rem;
+		font-size: 0.95rem;
+	}
+}
+
+@media (min-width: 768px) {
+	.action-button {
+		padding: 2.5rem 1.5rem;
+	}
+	
+	.action-icon {
+		width: 72px;
+		height: 72px;
+		font-size: 2.25rem;
+	}
 }

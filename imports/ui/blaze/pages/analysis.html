@@ -1,85 +1,145 @@
 <template name="Analysis">
-	<h2 class="mb-3">Spending Insights</h2>
+	<div class="analysis-header">
+		<h2 class="analysis-title">
+			<i class="bi bi-graph-up-arrow"></i> Spending Insights
+		</h2>
+	</div>
+	
 	{{#if hasData}}
 		{{#with global}}
-			<div class="row g-3 mb-3">
+			<!-- Stat Cards -->
+			<div class="row g-3 mb-4">
 				<div class="col-md-3 col-6">
-					<div class="p-3 border rounded bg-light">
-						<div class="small text-muted">Total Spent</div>
-						<div class="fw-bold h5 mb-0">${{totalSpent}}</div>
+					<div class="stat-card">
+						<div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+						<div class="stat-label">Total Spent</div>
+						<div class="stat-value">${{totalSpent}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
-					<div class="p-3 border rounded bg-light">
-						<div class="small text-muted">Items (no tax)</div>
-						<div class="fw-bold h5 mb-0">${{totalItemSpent}}</div>
+					<div class="stat-card">
+						<div class="stat-icon"><i class="bi bi-cart3"></i></div>
+						<div class="stat-label">Items (no tax)</div>
+						<div class="stat-value">${{totalItemSpent}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
-					<div class="p-3 border rounded bg-light">
-						<div class="small text-muted">Tax Total</div>
-						<div class="fw-bold h5 mb-0">${{taxTotal}}</div>
+					<div class="stat-card">
+						<div class="stat-icon"><i class="bi bi-percent"></i></div>
+						<div class="stat-label">Tax Total</div>
+						<div class="stat-value">${{taxTotal}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
-					<div class="p-3 border rounded bg-light">
-						<div class="small text-muted">Avg / Receipt</div>
-						<div class="fw-bold h5 mb-0">${{avgPerReceipt}}</div>
+					<div class="stat-card">
+						<div class="stat-icon"><i class="bi bi-receipt"></i></div>
+						<div class="stat-label">Avg / Receipt</div>
+						<div class="stat-value">${{avgPerReceipt}}</div>
 					</div>
 				</div>
 			</div>
-			<div class="mb-3">
-				<div class="d-flex align-items-center mb-2">
-					<h5 class="mb-0">Per User</h5>
-					<small class="text-muted ms-2">(tax included equally)</small>
+			<!-- Per User Spending -->
+			<div class="analysis-section">
+				<div class="section-header">
+					<div>
+						<h5 class="section-title">
+							<i class="bi bi-people-fill"></i>
+							Per User
+						</h5>
+						<p class="section-subtitle">(tax included equally)</p>
+					</div>
 				</div>
-				<div class="mb-2">
+				
+				<div class="user-filter-chips">
 					{{#each filterUsers}}
-						<button class="btn btn-sm me-2 filter-btn {{activeClass userId}}" data-id="{{userId}}">{{name}}</button>
+						<button class="filter-chip {{#if (activeClass userId)}}active{{/if}}" data-id="{{userId}}">
+							{{name}}
+						</button>
 					{{/each}}
-					{{#if hasFilter}}<button class="btn btn-sm btn-secondary" id="clearFilter">Clear</button>{{/if}}
+					{{#if hasFilter}}
+						<button class="filter-chip" id="clearFilter">
+							<i class="bi bi-x-circle"></i> Clear
+						</button>
+					{{/if}}
 				</div>
-				<ul class="list-group mb-3">
+				
+				<div class="user-spending-list">
 					{{#each perUserGlobal}}
-						<li class="list-group-item py-2">
-							<div class="d-flex justify-content-between align-items-center">
-								<div class="me-3 analysis-user-name">{{name}}</div>
-								<div class="flex-grow-1 mx-3 analysis-bar-container">
-									<div class="analysis-bar-fill" style="width: {{barWidth}}%;"></div>
+						<div class="user-spending-item">
+							<div class="user-spending-row">
+								<div class="user-name">{{name}}</div>
+								<div class="spending-bar-container">
+									<div class="spending-bar-fill" style="width: {{barWidth}}%;"></div>
 								</div>
-								<div class="text-end analysis-amount">
-									<span class="badge bg-dark">${{amount}}</span>
-									<span class="badge bg-secondary ms-1">{{percent}}%</span>
+								<div class="spending-amount">
+									<span class="amount-badge">${{amount}}</span>
+									<span class="percent-badge">{{percent}}%</span>
 								</div>
 							</div>
-						</li>
+						</div>
 					{{/each}}
-				</ul>
+				</div>
 			</div>
+			<!-- Monthly Trend & Top Items -->
 			<div class="row g-4">
 				<div class="col-md-6">
-					<h5 class="mb-2">Monthly Trend</h5>
-					<ul class="list-group small">
-						{{#each monthlyBreakdown}}
-							<li class="list-group-item d-flex justify-content-between"><span>{{month}}</span><span class="fw-bold">${{total}}</span></li>
-						{{/each}}
-					</ul>
+					<div class="analysis-section">
+						<div class="section-header">
+							<h5 class="section-title">
+								<i class="bi bi-calendar3"></i>
+								Monthly Trend
+							</h5>
+						</div>
+						<div class="monthly-list">
+							{{#each monthlyBreakdown}}
+								<div class="monthly-item">
+									<div class="monthly-label">
+										<i class="bi bi-calendar-check"></i>
+										{{month}}
+									</div>
+									<div class="monthly-value">${{total}}</div>
+								</div>
+							{{/each}}
+						</div>
+					</div>
 				</div>
 				<div class="col-md-6">
-					<h5 class="mb-2">Top Items</h5>
-					<ul class="list-group small">
-						{{#each topItems}}
-							<li class="list-group-item d-flex justify-content-between">
-								<span class="text-truncate analysis-item-name" title="{{name}}">{{name}}</span>
-								<span>${{total}} <span class="text-muted">×{{count}}</span></span>
-							</li>
-						{{/each}}
-					</ul>
+					<div class="analysis-section">
+						<div class="section-header">
+							<h5 class="section-title">
+								<i class="bi bi-star-fill"></i>
+								Top Items
+							</h5>
+						</div>
+						<div class="top-items-list">
+							{{#each topItems}}
+								<div class="top-item">
+									<div class="item-name" title="{{name}}">{{name}}</div>
+									<div class="item-details">
+										<span class="item-value">${{total}}</span>
+										<span class="item-count">×{{count}}</span>
+									</div>
+								</div>
+							{{/each}}
+						</div>
+					</div>
 				</div>
 			</div>
-			<div class="mt-4 small text-muted">Receipts analyzed: {{receiptCount}}</div>
+			
+			<div class="analysis-footer">
+				<p class="analysis-footer-text">
+					<i class="bi bi-receipt-cutoff"></i>
+					Receipts analyzed: <strong>{{receiptCount}}</strong>
+				</p>
+			</div>
 		{{/with}}
 	{{else}}
-		<p class="text-muted">No data to analyze yet. Create bills to see insights.</p>
+		<div class="analysis-empty-state">
+			<i class="bi bi-pie-chart analysis-empty-icon"></i>
+			<p class="analysis-empty-text">No data to analyze yet. Create bills to see insights.</p>
+			<a href="/" class="btn btn-purple btn-lg">
+				<i class="bi bi-plus-circle"></i> Add Your First Receipt
+			</a>
+		</div>
 	{{/if}}
 </template>

@@ -1,6 +1,7 @@
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import './analysis.html';
+import '/client/styles/analysis.css';
 import { Bills } from '/imports/api/bills';
 import { computeExpenseSummary } from '/imports/api/models';
 
@@ -96,7 +97,7 @@ Template.Analysis.helpers({
 		return Template.instance().filter.get().length > 0;
 	},
 	activeClass(userId) {
-		return Template.instance().filter.get().includes(userId) ? 'btn-primary' : 'btn-outline-secondary';
+		return Template.instance().filter.get().includes(userId);
 	},
 	monthlyBreakdown() {
 		const g = Template.instance().global.get();
@@ -109,7 +110,7 @@ Template.Analysis.helpers({
 });
 
 Template.Analysis.events({
-	'click .filter-btn'(e, t) {
+	'click .filter-chip[data-id]'(e, t) {
 		const id = e.currentTarget.getAttribute('data-id');
 		const cur = t.filter.get();
 		t.filter.set(cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);

@@ -4,6 +4,15 @@ import './styles/global.css';
 import { Modal, Collapse, Dropdown } from 'bootstrap';
 import { Meteor } from 'meteor/meteor';
 
+// Initialize theme before anything else
+function initTheme() {
+	const theme = localStorage.getItem('theme') || 'light';
+	document.documentElement.setAttribute('data-bs-theme', theme);
+}
+
+// Initialize theme immediately
+initTheme();
+
 // Make Bootstrap components available globally
 Meteor.startup(() => {
 	if (typeof window !== 'undefined') {

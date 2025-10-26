@@ -8,7 +8,6 @@ import '/imports/ui/blaze/pages/dashboard';
 import '/imports/ui/blaze/pages/splitPage';
 import '/imports/ui/blaze/pages/history';
 import '/imports/ui/blaze/pages/analysis';
-import '/imports/ui/blaze/pages/billDetail';
 import '/imports/ui/blaze/pages/settings';
 
 function render(templateName, data = {}) {
@@ -29,6 +28,5 @@ FlowRouter.route('/', { name: 'dashboard', action() { render('Dashboard'); } });
 FlowRouter.route('/split/:id', { name: 'splitPage', action(params) { render('SplitPage', { billId: params.id }); } });
 FlowRouter.route('/history', { name: 'history', action() { render('History'); } });
 FlowRouter.route('/analysis', { name: 'analysis', action() { render('Analysis'); } });
-FlowRouter.route('/bill/:id', { name: 'billDetail', action(params) { render('BillDetail', { billId: params.id }); } });
 FlowRouter.route('/settings', { name: 'settings', action() { render('Settings'); } });
 
