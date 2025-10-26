@@ -21,6 +21,34 @@ Meteor.startup(() => {
 		window.bootstrap.Collapse = Collapse;
 		window.bootstrap.Dropdown = Dropdown;
 	}
+
+	// Register Service Worker for PWA
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.register('/service-worker.js')
+			.then((registration) => {
+				if (process.env.NODE_ENV !== 'production') {
+					console.log('Service Worker registered:', registration);
+				}
+
+				// Check for updates
+				registration.addEventListener('updatefound', () => {
+					const newWorker = registration.installing;
+					newWorker.addEventListener('statechange', () => {
+						if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+							// New service worker available, could show update notification
+							if (process.env.NODE_ENV !== 'production') {
+								console.log('New service worker available');
+							}
+						}
+					});
+				});
+			})
+			.catch((error) => {
+				if (process.env.NODE_ENV !== 'production') {
+					console.error('Service Worker registration failed:', error);
+				}
+			});
+	}
 });
 
 // Blaze layout & routes are defined under imports/startup/client.

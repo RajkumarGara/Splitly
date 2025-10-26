@@ -512,3 +512,21 @@
 		font-size: 2.25rem;
 	}
 }
+
+/* ===== PWA Install Alert ===== */
+.alert-purple {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+	border: 2px solid var(--purple-primary);
+	border-radius: 12px;
+	color: var(--bs-gray-900);
+}
+
+[data-bs-theme="dark"] .alert-purple {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+	border-color: var(--purple-light);
+	color: var(--bs-gray-200);
+}
+
+.alert-purple .btn-purple {
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
