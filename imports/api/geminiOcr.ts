@@ -97,9 +97,27 @@ JSON format only:
 			},
 		]);
 
-		const response = result.response.text();
 		const elapsed = Date.now() - startTime;
 		console.log(`   ⏱️  Gemini processing time: ${(elapsed / 1000).toFixed(2)}s`);
+
+		// Check for blocked content or safety issues
+		const candidates = result.response.candidates;
+		if (!candidates || candidates.length === 0) {
+			console.error('   ⚠️  No candidates in response. Full response:', JSON.stringify(result.response, null, 2));
+			throw new Error('No response candidates from Gemini API');
+		}
+
+		const finishReason = candidates[0].finishReason;
+		if (finishReason !== 'STOP') {
+			console.error(`   ⚠️  Unexpected finish reason: ${finishReason}`);
+			if (finishReason === 'SAFETY') {
+				throw new Error('Content blocked by safety filters');
+			} else if (finishReason === 'MAX_TOKENS') {
+				throw new Error('Response exceeded max tokens (try a clearer receipt image)');
+			}
+		}
+
+		const response = result.response.text();
 
 		// Clean response (remove markdown code blocks if present)
 		let jsonText = response.trim();
@@ -108,6 +126,7 @@ JSON format only:
 
 		// Validate JSON before parsing
 		if (!jsonText || jsonText.length < 10) {
+			console.error('   ⚠️  Empty response. Raw response:', response);
 			throw new Error(`Empty or invalid response from Gemini: "${jsonText}"`);
 		}
 
