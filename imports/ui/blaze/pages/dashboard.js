@@ -57,9 +57,8 @@ Template.Dashboard.onCreated(function () {
 	this.ocrProcessing = new ReactiveVar(false);
 	this.ocrProgress = new ReactiveVar(0);
 	this.ocrStatus = new ReactiveVar('');
-	this.showHelpInfo = new ReactiveVar(
-		localStorage.getItem('splitly_showHelp') !== 'false',
-	);
+	this.showInstallPrompt = new ReactiveVar(false);
+	this.deferredPrompt = null;
 	this.actionLock = false;
 });
 
@@ -80,13 +79,32 @@ Template.Dashboard.onRendered(function () {
 			if (uploadBtn) {uploadBtn.disabled = isProcessing;}
 		});
 	});
+
+	// PWA Install Prompt
+	window.addEventListener('beforeinstallprompt', (e) => {
+		// Prevent the mini-infobar from appearing on mobile
+		e.preventDefault();
+		// Store the event so it can be triggered later
+		tpl.deferredPrompt = e;
+		// Check if already dismissed
+		const dismissed = localStorage.getItem('pwa_install_dismissed');
+		if (!dismissed) {
+			tpl.showInstallPrompt.set(true);
+		}
+	});
+
+	// Detect if app is already installed
+	window.addEventListener('appinstalled', () => {
+		tpl.showInstallPrompt.set(false);
+		tpl.deferredPrompt = null;
+	});
 });
 
 /* ===== TEMPLATE HELPERS ===== */
 
 Template.Dashboard.helpers({
-	showHelpInfo() {
-		return Template.instance().showHelpInfo.get();
+	showInstallPrompt() {
+		return Template.instance().showInstallPrompt.get();
 	},
 	hasRecentBills() {
 		return Bills.find().count() > 0;
@@ -132,9 +150,27 @@ Template.Dashboard.events({
 		}
 	},
 
-	'click #hideHelpBtn'(e, tpl) {
-		tpl.showHelpInfo.set(false);
-		localStorage.setItem('splitly_showHelp', 'false');
+	'click #installAppBtn'(e, tpl) {
+		e.preventDefault();
+		if (!tpl.deferredPrompt) {
+			return;
+		}
+		// Show the install prompt
+		tpl.deferredPrompt.prompt();
+		// Wait for the user to respond to the prompt
+		tpl.deferredPrompt.userChoice.then((choiceResult) => {
+			if (choiceResult.outcome === 'accepted') {
+				pushAlert('success', 'App installed successfully!');
+			}
+			tpl.deferredPrompt = null;
+			tpl.showInstallPrompt.set(false);
+		});
+	},
+
+	'click #dismissInstallBtn'(e, tpl) {
+		e.preventDefault();
+		tpl.showInstallPrompt.set(false);
+		localStorage.setItem('pwa_install_dismissed', 'true');
 	},
 
 	'click #scanReceiptBtn'(e, tpl) {

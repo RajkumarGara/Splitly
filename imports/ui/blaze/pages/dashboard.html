@@ -33,6 +33,26 @@
 			<input type="file" id="scanFileInput" accept="image/*" capture="environment" class="file-input-hidden">
 			<input type="file" id="receiptFileInput" accept="image/*" class="file-input-hidden">
 
+		{{#if showInstallPrompt}}
+			<div class="alert alert-purple mb-4 d-flex align-items-center justify-content-between">
+				<div class="d-flex align-items-center">
+					<i class="bi bi-phone me-3 fs-3"></i>
+					<div>
+						<div class="fw-bold">Install Splitly App</div>
+						<small>Add to your home screen for quick access!</small>
+					</div>
+				</div>
+				<div class="btn-group">
+					<button class="btn btn-sm btn-purple" id="installAppBtn">
+						<i class="bi bi-download"></i> Install
+					</button>
+					<button class="btn btn-sm btn-outline-secondary" id="dismissInstallBtn">
+						<i class="bi bi-x"></i>
+					</button>
+				</div>
+			</div>
+		{{/if}}
+
 		{{#if ocrProcessing}}
 			<div class="alert alert-info mb-4">
 				<div class="d-flex align-items-center mb-2">
