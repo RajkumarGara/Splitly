@@ -25,18 +25,15 @@ if (Meteor.isServer) {
 					}
 				}
 			});
-			console.log('✅ Loaded environment variables from .env');
 		}
 	} catch (err) {
-		console.log('⚠️  Could not load .env file:', err);
+		console.error('Could not load .env file:', err);
 	}
 }
 
 Meteor.startup(() => {
-	// Log API key status (without revealing the key)
-	if (process.env.GOOGLE_GEMINI_API_KEY) {
-		console.log('✅ Google Gemini API key configured');
-	} else {
-		console.log('⚠️  Google Gemini API key not found - using Tesseract fallback');
+	// API initialization - log critical config only
+	if (!process.env.GOOGLE_GEMINI_API_KEY) {
+		console.warn('⚠️ Google Gemini API key not configured - using Tesseract fallback');
 	}
 });

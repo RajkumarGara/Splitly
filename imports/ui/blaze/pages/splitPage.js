@@ -61,7 +61,33 @@ Template.SplitPage.helpers({
 	},
 	items() {
 		const bill = Bills.findOne(Template.instance().billId);
-		return bill?.items || [];
+		const items = bill?.items || [];
+		const showSplitMode = Template.instance().showSplitMode.get();
+		const showDeleteButtons = Template.instance().showDeleteButtons.get();
+		const hasMoreThanFourUsers = (bill?.users?.length || 0) > 4;
+
+		// Get users directly - no transformation needed
+		const users = bill?.users || [];
+
+		// Add computed properties to each item for the template
+		return items.map(item => {
+			const userChipsClass = `user-chips-container-wrap${hasMoreThanFourUsers ? ' wrap-enabled' : ''}${!showSplitMode ? ' invisible' : ''}`;
+
+			// Add item ID and selected state to each user for this item
+			const usersWithState = users.map(user => ({
+				...user,
+				isSelected: item.userIds?.includes(user.id) || false,
+				itemId: item.id,
+			}));
+
+			return {
+				...item,
+				itemCardClass: `item-card-content${showSplitMode ? ' split-mode-active' : ''}${hasMoreThanFourUsers ? ' wrap-enabled' : ''}`,
+				userChipsClass: userChipsClass,
+				showDeleteBtn: showDeleteButtons,
+				users: usersWithState,  // Users with selection state
+			};
+		});
 	},
 	itemIndex(index) {
 		return index + 1;
@@ -79,7 +105,25 @@ Template.SplitPage.helpers({
 	},
 	billUsers() {
 		const bill = Bills.findOne(Template.instance().billId);
-		return bill?.users || [];
+		const users = bill?.users || [];
+		// Add first letter to each user
+		return users.map(user => ({
+			...user,
+			firstLetter: user.name ? user.name.charAt(0).toUpperCase() : '',
+		}));
+	},
+	hasMoreThanFourUsers() {
+		const bill = Bills.findOne(Template.instance().billId);
+		return (bill?.users?.length || 0) > 4;
+	},
+	firstLetter(name) {
+		return name ? name.charAt(0).toUpperCase() : '';
+	},
+	getUserChipClass(userId, itemId) {
+		const bill = Bills.findOne(Template.instance().billId);
+		const item = bill?.items?.find(i => i.id === itemId);
+		const isActive = item?.userIds?.includes(userId) || false;
+		return isActive ? 'active' : '';
 	},
 	isUserSelected(userId, itemId) {
 		const bill = Bills.findOne(Template.instance().billId);
@@ -146,12 +190,15 @@ Template.SplitPage.events({
 		localStorage.setItem('splitly_showHelp', 'false');
 	},
 	'click #showAddFormBtn'(e, tpl) {
+		e.preventDefault();
 		tpl.showAddForm.set(!tpl.showAddForm.get());
 	},
 	'click #hideAddFormBtn'(e, tpl) {
+		e.preventDefault();
 		tpl.showAddForm.set(false);
 	},
 	'click #toggleSplitBtn'(e, tpl) {
+		e.preventDefault();
 		const newState = !tpl.showSplitMode.get();
 		tpl.showSplitMode.set(newState);
 		// Turn off delete mode when entering split mode
@@ -162,6 +209,7 @@ Template.SplitPage.events({
 		tpl.showAddForm.set(false);
 	},
 	'click #toggleDeleteBtn'(e, tpl) {
+		e.preventDefault();
 		const newState = !tpl.showDeleteButtons.get();
 		tpl.showDeleteButtons.set(newState);
 		// Turn off split mode when entering delete mode
@@ -229,6 +277,64 @@ Template.SplitPage.events({
 			pushAlert('success', 'People added to bill');
 		} catch (err) {
 			pushAlert('error', err.reason || 'Could not add people');
+		}
+	},
+	'click #managePeopleBtn'(e, tpl) {
+		e.preventDefault();
+		// Open the user modal
+		const modalEl = document.getElementById('userModal');
+		if (!modalEl || !window.bootstrap?.Modal) {
+			pushAlert('error', 'Modal not available');
+			return;
+		}
+		try {
+			const modal = new window.bootstrap.Modal(modalEl);
+
+			// Listen for when the modal is closed to sync users
+			modalEl.addEventListener('hidden.bs.modal', async function syncUsers() {
+				// Remove the listener after first use
+				modalEl.removeEventListener('hidden.bs.modal', syncUsers);
+
+				// Sync bill users with global users
+				const billId = tpl.billId;
+				const bill = Bills.findOne(billId);
+				const globalUsers = GlobalUsers.find().fetch();
+
+				if (!bill) {return;}
+
+				// Get current bill user IDs
+				const billUserIds = bill.users.map(u => u.id);
+				const globalUserIds = globalUsers.map(u => u._id);
+
+				// Remove users from bill that are no longer in global list
+				const usersToRemove = billUserIds.filter(id => !globalUserIds.includes(id));
+				for (const userId of usersToRemove) {
+					try {
+						await Meteor.callAsync('bills.removeUser', billId, userId);
+					} catch (err) {
+						console.error('Failed to remove user from bill:', err);
+					}
+				}
+
+				// Add new users from global list that aren't in the bill
+				// bills.addUser will automatically add them to all items
+				const usersToAdd = globalUsers.filter(u => !billUserIds.includes(u._id));
+				for (const user of usersToAdd) {
+					try {
+						await Meteor.callAsync('bills.addUser', billId, { id: user._id, name: user.name });
+					} catch (err) {
+						console.error('Failed to add user to bill:', err);
+					}
+				}
+
+				if (usersToRemove.length > 0 || usersToAdd.length > 0) {
+					pushAlert('success', 'Bill users updated');
+				}
+			});
+
+			modal.show();
+		} catch (_error) {
+			pushAlert('error', 'Failed to open modal');
 		}
 	},
 	async 'click [id^="removeItem-"]'(e) {

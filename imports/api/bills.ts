@@ -66,9 +66,18 @@ Meteor.methods({
 			contact: user.contact?.trim(),
 		};
 
+		// Add user to all existing items
+		const updatedItems = existing.items.map((item: Item) => ({
+			...item,
+			userIds: [...item.userIds, sanitizedUser.id],
+		}));
+
 		await Bills.updateAsync(billId, {
 			$push: { users: sanitizedUser },
-			$set: { updatedAt: new Date() },
+			$set: {
+				items: updatedItems,
+				updatedAt: new Date(),
+			},
 		});
 	},
 
@@ -322,11 +331,8 @@ Meteor.methods({
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
 
-		console.log(`\n🧾 OCR Extraction Started - Bill: ${billId}`);
-
 		// Try Gemini AI first if available
 		if (isGeminiAvailable()) {
-			console.log('🤖 Using Gemini AI...');
 			const geminiResult = await extractReceiptWithGemini(imageData);
 
 			if (geminiResult.success && geminiResult.items && geminiResult.items.length > 0) {
@@ -345,17 +351,6 @@ Meteor.methods({
 				const taxAmount = geminiResult.tax || 0;
 				const calculatedTotal = calculatedItemsTotal + taxAmount;
 
-				console.log(`✅ Extracted ${items.length} items from ${geminiResult.store || 'Receipt'}`);
-				console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
-
-				// Check for mismatches
-				const itemsTotalMismatch = geminiResult.subtotal && Math.abs(calculatedItemsTotal - geminiResult.subtotal) > 0.01;
-				const totalAmountMismatch = geminiResult.total && Math.abs(calculatedTotal - geminiResult.total) > 0.01;
-
-				if (itemsTotalMismatch || totalAmountMismatch) {
-					console.log(`⚠️  Receipt mismatch detected`);
-				}
-
 				await persistParsedReceipt(
 					billId,
 					items,
@@ -363,13 +358,11 @@ Meteor.methods({
 					taxAmount,
 					geminiResult.total || calculatedTotal,
 					geminiResult.store || 'Receipt',
-					null,
+					geminiResult.date || null,
 				);
 
 				return items.length;
 			}
-
-			console.log('⚠️  Gemini failed, falling back to Tesseract...');
 		}
 
 		// Fallback: caller should use 'ocr.extract' with Tesseract text
@@ -390,8 +383,6 @@ Meteor.methods({
 			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
 		}
 
-		console.log(`\n🧾 OCR Extraction Started (Tesseract) - Bill: ${billId}`);
-
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) {
 			throw new Meteor.Error('not-found', 'Bill not found');
@@ -401,26 +392,10 @@ Meteor.methods({
 		const storeName = detectStoreName(text);
 		const receiptDate = extractDateFromLines(lines);
 
-		console.log(`📍 Store: ${storeName}, Date: ${receiptDate || 'N/A'}`);
-
 		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(
 			text,
 			existing.users.map((u: UserProfile) => u.id),
 		);
-
-		const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
-		const calculatedTotal = calculatedItemsTotal + taxAmount;
-
-		console.log(`✅ Extracted ${items.length} items`);
-		console.log(`   Items: $${calculatedItemsTotal.toFixed(2)} + Tax: $${taxAmount.toFixed(2)} = Total: $${calculatedTotal.toFixed(2)}`);
-
-		// Check for mismatches
-		const itemsTotalMismatch = receiptTotal !== null && Math.abs(calculatedItemsTotal - receiptTotal) > 0.01;
-		const totalAmountMismatch = totalAmount !== null && Math.abs(calculatedTotal - totalAmount) > 0.01;
-
-		if (itemsTotalMismatch || totalAmountMismatch) {
-			console.log(`⚠️  Receipt mismatch detected`);
-		}
 
 		if (!items.length) {
 			return 0;
@@ -492,10 +467,15 @@ Meteor.methods({
 	/**
 	 * Clear all bills and users from the database
 	 * WARNING: This is a destructive operation
-	 * TODO: Add authentication check before allowing in production
+	 * Only available in development environment for safety
 	 * @returns {Promise<{success: boolean}>}
 	 */
 	async 'clearAllData'() {
+		// Protect production environment - only allow in development
+		if (process.env.NODE_ENV === 'production') {
+			throw new Meteor.Error('forbidden', 'Data clearing is disabled in production');
+		}
+
 		// Import GlobalUsers to clear it too
 		const { GlobalUsers } = await import('./users');
 

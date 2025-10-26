@@ -58,12 +58,10 @@ export function detectStoreName(text: string): string {
 
 	for (const { pattern, name } of storePatterns) {
 		if (pattern.test(upperText)) {
-			console.log(`🏪 Detected store: ${name}`);
 			return name;
 		}
 	}
 
-	console.log('🏪 Store not recognized, using generic parser');
 	return 'Receipt';
 }
 
