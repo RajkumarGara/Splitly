@@ -17,7 +17,21 @@ function getFlag(name, def) {
 	return (config.features || {})[name] ?? def;
 }
 
+function getTheme() {
+	return localStorage.getItem('theme') || 'light';
+}
+
+function applyTheme(theme) {
+	document.documentElement.setAttribute('data-bs-theme', theme);
+}
+
 Template.Settings.helpers({
+	isThemeLight() {
+		return getTheme() === 'light';
+	},
+	isThemeDark() {
+		return getTheme() === 'dark';
+	},
 	showHelpEnabled() {
 		const saved = localStorage.getItem('splitly_showHelp');
 		return saved === null ? true : saved === 'true';
@@ -31,6 +45,11 @@ Template.Settings.helpers({
 });
 
 Template.Settings.events({
+	'change input[name="themeRadio"]'(e) {
+		const theme = e.currentTarget.value;
+		localStorage.setItem('theme', theme);
+		applyTheme(theme);
+	},
 	'change #showHelpSwitch'(e) {
 		localStorage.setItem('splitly_showHelp', e.currentTarget.checked);
 	},

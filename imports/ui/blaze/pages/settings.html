@@ -9,6 +9,24 @@
 					<h5 class="mb-0"><i class="bi bi-sliders"></i> Preferences</h5>
 				</div>
 				<div class="card-body">
+					<div class="mb-3">
+						<label class="form-label">
+							<strong>Theme</strong>
+							<br><small class="text-muted">Choose your preferred color scheme</small>
+						</label>
+						<div class="btn-group w-100" role="group">
+							<input type="radio" class="btn-check" name="themeRadio" id="themeLight" value="light" checked="{{isThemeLight}}">
+							<label class="btn btn-outline-primary" for="themeLight">
+								<i class="bi bi-sun-fill"></i> Light
+							</label>
+							
+							<input type="radio" class="btn-check" name="themeRadio" id="themeDark" value="dark" checked="{{isThemeDark}}">
+							<label class="btn btn-outline-primary" for="themeDark">
+								<i class="bi bi-moon-fill"></i> Dark
+							</label>
+						</div>
+					</div>
+					<hr>
 					<div class="form-check form-switch mb-3">
 						<input class="form-check-input" type="checkbox" id="showHelpSwitch" checked="{{showHelpEnabled}}">
 						<label class="form-check-label" for="showHelpSwitch">
@@ -20,8 +38,8 @@
 					<div class="form-check form-switch mb-0">
 						<input class="form-check-input" type="checkbox" id="indexedSwitch" checked="{{indexedEnabled}}">
 						<label class="form-check-label" for="indexedSwitch">
-							<strong>Enable IndexedDB Caching</strong>
-							<br><small class="text-muted">Cache data locally for offline access</small>
+							<strong>Enable Offline Caching</strong>
+							<br><small class="text-muted">Cache receipts locally in your browser for faster loading and offline access</small>
 						</label>
 					</div>
 				</div>
@@ -31,19 +49,10 @@
 			</div>
 
 			<!-- Data Management Section -->
-			<div class="card shadow-sm mb-3 border-danger">
-				<div class="card-header bg-white">
-					<h5 class="mb-0 text-danger"><i class="bi bi-trash-fill"></i> Data Management</h5>
-				</div>
-				<div class="card-body">
-					<p class="mb-3">
-						<strong>Clear All Data</strong><br>
-						<small class="text-muted">This will permanently delete all receipts, items, people, and analytics data from the database.</small>
-					</p>
-					<button class="btn btn-danger w-100" id="clearCacheBtn">
-						<i class="bi bi-trash-fill"></i> Clear All Data
-					</button>
-				</div>
+			<div class="mt-4 pt-3 border-top">
+				<button class="btn btn-danger" id="clearCacheBtn">
+					<i class="bi bi-trash-fill"></i> Clear All Data
+				</button>
 			</div>
 		</div>
 	</div>
