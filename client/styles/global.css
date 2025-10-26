@@ -1,6 +1,6 @@
 /* Global Styles for Splitly App */
 
-/* ===== Purple Theme Colors ===== */
+/* ===== Theme Colors ===== */
 :root {
 	--purple-primary: #6366f1;
 	--purple-secondary: #8b5cf6;
@@ -8,111 +8,156 @@
 	--purple-light: #a78bfa;
 }
 
+/* Dark mode overrides */
+[data-bs-theme="dark"] {
+	--bs-body-bg: #121212;
+}
+
+/* Store name link styling */
+.store-name-link {
+	color: var(--purple-primary) !important;
+}
+
+.store-name-link:hover {
+	color: var(--purple-dark) !important;
+}
+
+[data-bs-theme="dark"] .store-name-link {
+	color: var(--purple-light) !important;
+}
+
+[data-bs-theme="dark"] .store-name-link:hover {
+	color: var(--purple-primary) !important;
+}
+
 /* ===== Navigation Bar ===== */
 .navbar-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+[data-bs-theme="dark"] .navbar-purple {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 
 /* ===== Purple Buttons ===== */
 .btn-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-	color: white;
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
+	color: white !important;
 	border: none;
 	transition: all 0.3s ease;
 }
 
 .btn-purple:hover {
-	background: linear-gradient(135deg, #5046e5 0%, #7c3aed 100%);
-	color: white;
+	background: linear-gradient(135deg, var(--purple-dark) 0%, #7c3aed 100%);
+	color: white !important;
 	transform: translateY(-1px);
 	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+[data-bs-theme="dark"] .btn-purple:hover {
+	box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
 
 .btn-purple:active {
 	transform: translateY(0);
 	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+	color: white !important;
 }
 
 .btn-outline-purple {
-	color: #6366f1 !important;
-	border-color: #6366f1 !important;
+	color: var(--purple-primary) !important;
+	border-color: var(--purple-primary) !important;
 	background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-purple {
+	color: var(--purple-light) !important;
+	border-color: var(--purple-light) !important;
 }
 
 .btn-outline-purple:hover {
 	color: white !important;
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-	border-color: #6366f1 !important;
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%) !important;
+	border-color: var(--purple-primary) !important;
 }
 
-/* ===== Purple Badges ===== */
+/* ===== Purple Badges & Text ===== */
 .badge.bg-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	color: white;
 }
 
-/* ===== Purple Text ===== */
 .text-purple {
-	color: #6366f1 !important;
+	color: var(--purple-primary) !important;
 }
 
-/* ===== Purple Card Headers ===== */
+[data-bs-theme="dark"] .text-purple {
+	color: var(--purple-light) !important;
+}
+
 .bg-gradient-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	color: white;
 }
 
-/* ===== Progress Bar ===== */
+/* ===== Progress Bar & Spinner ===== */
 .progress-bar-purple {
-	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 }
 
-/* ===== Spinner ===== */
 .spinner-border.text-purple {
-	color: #6366f1 !important;
-	border-color: #6366f1;
+	color: var(--purple-primary) !important;
+	border-color: var(--purple-primary);
+	border-right-color: transparent;
+}
+
+[data-bs-theme="dark"] .spinner-border.text-purple {
+	color: var(--purple-light) !important;
+	border-color: var(--purple-light);
 	border-right-color: transparent;
 }
 
 /* ===== Utility Classes ===== */
-
-/* Hidden file input */
 .file-input-hidden {
 	display: none;
 }
 
-/* Alert positioning */
 .alerts-container {
 	z-index: 1080;
 }
 
-/* Empty state icons */
 .empty-state-icon {
 	font-size: 4rem;
-	color: #dee2e6;
+	color: var(--bs-gray-300);
+}
+
+[data-bs-theme="dark"] .empty-state-icon {
+	color: var(--bs-gray-700);
 }
 
 .empty-state-icon-muted {
 	font-size: 4rem;
-	color: #6c757d;
+	color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .empty-state-icon-muted {
+	color: var(--bs-gray-400);
 }
 
 .warning-icon-large {
 	font-size: 3rem;
 }
 
-/* Progress bar height */
 .progress-ocr {
 	height: 28px;
 }
 
-/* Card spacing */
 .card-spacing-top {
 	margin-top: 3rem;
 }
 
-/* ===== Editable Elements ===== */
 .editable-name {
 	cursor: pointer;
 }
@@ -126,6 +171,26 @@
 	width: 100px;
 }
 
+[data-bs-theme="dark"] .table {
+	color: var(--bs-gray-200);
+	border-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .table thead th {
+	background-color: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .table tbody tr {
+	border-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+	color: var(--bs-gray-200);
+	background-color: rgba(255, 255, 255, 0.02);
+}
+
 /* ===== Analysis Page Styles ===== */
 .analysis-user-name {
 	min-width: 120px;
@@ -133,13 +198,17 @@
 
 .analysis-bar-container {
 	height: 8px;
-	background: #eee;
+	background: var(--bs-gray-300);
 	border-radius: 4px;
+}
+
+[data-bs-theme="dark"] .analysis-bar-container {
+	background: var(--bs-gray-700);
 }
 
 .analysis-bar-fill {
 	height: 100%;
-	background: #0d6efd;
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	border-radius: 4px;
 }
 
@@ -149,4 +218,274 @@
 
 .analysis-item-name {
 	max-width: 200px;
+}
+
+/* ===== Dark Mode Overrides ===== */
+[data-bs-theme="dark"] body {
+	background-color: #0d1117;
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] h5,
+[data-bs-theme="dark"] h6 {
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .text-muted {
+	color: var(--bs-gray-400) !important;
+}
+
+[data-bs-theme="dark"] a {
+	color: var(--purple-light);
+}
+
+[data-bs-theme="dark"] a:hover {
+	color: #c4b5fd;
+}
+
+/* ===== Card & Form Styles ===== */
+[data-bs-theme="dark"] .card-footer {
+	background: var(--bs-dark);
+	border-top-color: var(--bs-gray-800);
+	color: var(--bs-gray-400);
+}
+
+[data-bs-theme="dark"] .form-label {
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .form-label small {
+	color: var(--bs-gray-400);
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+	background-color: var(--bs-dark);
+	border-color: var(--bs-gray-700);
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+	background-color: #252936;
+	border-color: var(--purple-dark);
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+	color: var(--bs-gray-600);
+}
+
+/* ===== Checkbox & Toggle Switch Styles ===== */
+.form-check-input:checked {
+	background-color: var(--purple-primary) !important;
+	border-color: var(--purple-primary) !important;
+}
+
+.form-check-input:focus {
+	border-color: var(--purple-primary) !important;
+	box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .form-check-input:checked {
+	background-color: var(--purple-light) !important;
+	border-color: var(--purple-light) !important;
+}
+
+[data-bs-theme="dark"] .form-check-input:focus {
+	border-color: var(--purple-light) !important;
+	box-shadow: 0 0 0 0.25rem rgba(167, 139, 250, 0.25) !important;
+}
+
+/* ===== Button Styles ===== */
+.btn-primary {
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
+	border-color: var(--purple-primary);
+	color: white !important;
+}
+
+.btn-primary:hover {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, #7c3aed 100%);
+	border-color: var(--purple-dark);
+	color: white !important;
+	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:active,
+.btn-primary:focus {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, #7c3aed 100%);
+	border-color: var(--purple-dark);
+	color: white !important;
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+[data-bs-theme="dark"] .btn-primary {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	border-color: var(--purple-dark);
+}
+
+[data-bs-theme="dark"] .btn-primary:hover {
+	background: linear-gradient(135deg, #7c3aed 0%, #c4b5fd 100%);
+	border-color: #7c3aed;
+	box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.btn-outline-primary {
+	color: var(--purple-primary);
+	border-color: var(--purple-primary);
+	background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+	border-color: var(--purple-secondary);
+	color: var(--purple-dark);
+}
+
+.btn-check:checked + .btn-outline-primary {
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
+	border-color: var(--purple-primary);
+	color: white;
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+/* Light mode: inactive button (dark mode button) with light purple outline */
+.btn-check:not(:checked) + .btn-outline-primary {
+	color: var(--purple-secondary);
+	border-color: var(--purple-secondary);
+}
+
+.btn-check:not(:checked) + .btn-outline-primary:hover {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+	border-color: var(--purple-secondary);
+	color: var(--purple-dark);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+	color: var(--purple-light);
+	border-color: var(--purple-light);
+	background-color: transparent;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+	background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
+	border-color: var(--purple-dark);
+	color: var(--purple-light);
+}
+
+[data-bs-theme="dark"] .btn-check:checked + .btn-outline-primary {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	border-color: var(--purple-dark);
+	color: white;
+	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Dark mode: inactive button (light mode button) with purple */
+[data-bs-theme="dark"] .btn-check:not(:checked) + .btn-outline-primary {
+	color: var(--purple-dark);
+	border-color: var(--purple-dark);
+}
+
+[data-bs-theme="dark"] .btn-check:not(:checked) + .btn-outline-primary:hover {
+	background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
+	border-color: var(--purple-dark);
+	color: var(--purple-light);
+}
+
+[data-bs-theme="dark"] .btn-secondary {
+	background-color: var(--bs-gray-700);
+	border-color: var(--bs-gray-700);
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .btn-secondary:hover {
+	background-color: var(--bs-gray-600);
+	border-color: var(--bs-gray-600);
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .btn-outline-success {
+	color: var(--bs-teal);
+	border-color: var(--bs-teal);
+}
+
+[data-bs-theme="dark"] .btn-outline-success:hover {
+	background-color: var(--bs-teal);
+	border-color: var(--bs-teal);
+	color: #0d1117;
+}
+
+.btn-outline-danger {
+	color: #dc3545;
+	border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+	background-color: #dc3545;
+	border-color: #dc3545;
+	color: white;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger {
+	color: #f87171;
+	border-color: #f87171;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+	background-color: #f87171;
+	border-color: #f87171;
+	color: white;
+}
+
+/* ===== Alert & Badge Styles ===== */
+[data-bs-theme="dark"] .alert-info {
+	background-color: #1e3a5f;
+	border-color: var(--purple-dark);
+	color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .bg-light {
+	background-color: var(--bs-dark) !important;
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .border {
+	border-color: var(--bs-gray-800) !important;
+}
+
+[data-bs-theme="dark"] .text-success {
+	color: var(--bs-teal) !important;
+}
+
+[data-bs-theme="dark"] .badge.text-dark {
+	color: var(--bs-gray-200) !important;
+}
+
+/* ===== Modal & Dropdown Styles ===== */
+[data-bs-theme="dark"] .modal-content {
+	background-color: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .modal-header,
+[data-bs-theme="dark"] .modal-footer {
+	border-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+	background-color: var(--bs-dark);
+	border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+	color: var(--bs-gray-200);
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+	background-color: #252936;
+	color: var(--bs-gray-200);
 }

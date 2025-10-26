@@ -35,7 +35,7 @@
 						</th>
 						<th>Store</th>
 						<th>Date</th>
-						<th class="table-actions-col">Actions</th>
+						<th class="table-actions-col">Delete</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -45,7 +45,7 @@
 								<input type="checkbox" class="form-check-input receipt-checkbox" data-id="{{_id}}" data-selected="{{isSelected _id}}">
 							</td>
 							<td>
-								<a href="/split/{{_id}}" class="text-decoration-none">
+								<a href="/split/{{_id}}" class="text-decoration-none store-name-link">
 									{{storeName}}
 								</a>
 							</td>
@@ -53,14 +53,9 @@
 								<small class="text-muted">{{createdAt}}</small>
 							</td>
 							<td>
-								<div class="btn-group" role="group">
-									<a href="/split/{{_id}}" class="btn btn-outline-primary" title="Edit">
-										<i class="bi bi-pencil"></i>
-									</a>
-									<button class="btn btn-outline-danger delete-single-btn" data-id="{{_id}}" title="Delete">
-										<i class="bi bi-trash"></i>
-									</button>
-								</div>
+								<button class="btn btn-outline-danger delete-single-btn" data-id="{{_id}}" title="Delete">
+									<i class="bi bi-trash"></i>
+								</button>
 							</td>
 						</tr>
 					{{/each}}
