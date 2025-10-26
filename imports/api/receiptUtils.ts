@@ -16,7 +16,7 @@ export function skipLine(line: string) {
 		line.match(/^(ST#|OP#|TE#|TR#|TC#|TID|PID|AID|TVR|TSI|CV Member|Seq|App#|Tran ID|RRN|FID)/i) ||
 		line.match(/^(STORE|CASHIER|CUSTOMER|CASH|REG|INVOICE|SALE|SELF-CHECKOUT|Resp:)/i) ||
 		line.match(/^(Sales Check #|Entry Method|FTFM|APPROVED)/i) ||
-		line.match(/^(WAL\*MART|COSTCO|WHOLESALE|Save money|Live better)/i) || // Store headers
+		line.match(/^(WAL\*MART|Save money|Live better)/i) || // Store headers
 		line.match(/^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/) || // dates
 		line.match(/^\d{2}:\d{2}/) || // times
 		line.match(/^[\d\s:]+$/) || // only digits and spaces
@@ -47,7 +47,6 @@ export function detectStoreName(text: string): string {
 	const upperText = text.toUpperCase();
 
 	const storePatterns = [
-		{ pattern: /C[O0]STC[O0][\s\W]*WH[O0]LESALE|C[O0]STC[O0]|WHOLESALE.*C[O0]STC[O0]/i, name: 'Costco' },
 		{ pattern: /WAL[*\s\-_]?MART/i, name: 'Walmart' },
 		{ pattern: /HALAL\s*MARKET|FORT\s*WAYNE\s*HALAL|FWHALALMARKET|FWHALALMARKET@GMAIL|fwhalalmarket@gmail/i, name: 'Halal' },
 		{ pattern: /TARGET/i, name: 'Target' },

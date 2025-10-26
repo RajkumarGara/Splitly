@@ -11,3 +11,5 @@ services:
         value: https://splitly-ryao.onrender.com
       - key: PORT
         value: 3000
+      - key: GOOGLE_GEMINI_API_KEY
+        sync: false

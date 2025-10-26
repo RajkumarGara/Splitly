@@ -27,8 +27,6 @@ export function parseReceiptText(text: string, userIds: string[]) {
 			return parseWalmartReceipt(text, userIds);
 		case 'Halal':
 			return parseHalalMarketReceipt(text, userIds);
-		case 'Costco':
-			return parseCostcoReceipt(text, userIds);
 		default:
 			return parseGenericReceipt(text, userIds);
 	}
@@ -246,109 +244,6 @@ function parseHalalMarketReceipt(text: string, userIds: string[]) {
 }
 
 /**
- * Costco-specific receipt parser
- *
- * Format: "E  1892398 SMOOTHIES  16.99"
- * - Optional E prefix or other OCR garbage (EER, AUS i f, k WRI FT, etc.)
- * - Item code (6+ digits or 4-5 digits)
- * - Item name
- * - Price at end
- * - Discount lines: "0000360878 /1491866 3.60-" (subtract from previous item)
- * - Quantity lines: "2 @ 3.99" (skip these)
- *
- * @param text - Receipt text
- * @param userIds - User IDs to assign to items
- * @returns Parsed receipt data
- */
-function parseCostcoReceipt(text: string, userIds: string[]) {
-	const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
-	const items: Item[] = [];
-
-	const { receiptTotal, taxAmount, totalAmount } = extractTotalsFromLines(lines);
-	const usedLines = new Set<number>();
-
-	for (let i = 0; i < lines.length; i++) {
-		if (usedLines.has(i)) {
-			continue;
-		}
-
-		const line = lines[i];
-		const upperLine = line.toUpperCase();
-
-		// Skip header/footer lines and totals
-		if (skipLine(line)) {
-			continue;
-		}
-
-		// Skip common non-item lines
-		if (upperLine.match(/^(SUB.*?TOTAL|.*?TAX.*?%|TAX\s*$|TOTAL|BALANCE|CHANGE|VISA|CREDIT|DEBIT|DISCOVER|APPROVED|THANK|PURCHASE|\*{3,}|CV\s*Member|SELF-CHECKOUT|NUMBER\s*OF\s*ITEMS|# ITEMS SOLD|FID:|Seq#|App#|Resp:|Tran\s*ID|AMOUNT|CHANGE|XXXX|Payment|Visa)/i)) {
-			continue;
-		}
-
-		// Check for discount lines (ends with minus: "3.60-" or "1.50-")
-		const discountMatch = line.match(/(\d+\.\d{2})-\s*$/);
-		if (discountMatch) {
-			const discountAmount = parseFloat(discountMatch[1]);
-			// Apply discount to the last item added
-			if (items.length > 0) {
-				const lastItem = items[items.length - 1];
-				lastItem.price = parseFloat((lastItem.price - discountAmount).toFixed(2));
-				console.log(`   💰 Applied $${discountAmount.toFixed(2)} discount to "${lastItem.name}" → $${lastItem.price.toFixed(2)}`);
-			}
-			continue;
-		}
-
-		// Check for quantity calculation lines (2 @ 3.99 or 2 E 3.99)
-		if (/^\d+\s*[@E]\s*\d+\.\d{2}\s*$/.test(line)) {
-			continue;
-		}
-
-		// Extract price from end of line
-		const priceMatch = line.match(/\s+(\d+\.\d{2})\s*$/);
-		if (!priceMatch) {
-			continue;
-		}
-
-		const price = parseFloat(priceMatch[1]);
-		const priceIndex = line.lastIndexOf(priceMatch[1]);
-		let beforePrice = line.substring(0, priceIndex).trim();
-
-		// Clean up the item name by removing:
-		// 1. Item codes (6+ digits or 4-5 digits)
-		// 2. OCR garbage prefixes
-		// 3. Leading/trailing special characters
-
-		let name = beforePrice;
-
-		// Remove 6+ digit item codes (1892398, 1309922, 1491866, etc.)
-		name = name.replace(/\d{6,}\s+/, '');
-
-		// Remove 4-5 digit item codes (8789, 4032, 27003, etc.)
-		name = name.replace(/\d{4,5}\s+/, '');
-
-		// Remove OCR garbage patterns at the start
-		// Examples: "EER ", "AUS i f ", "k WRI FT ", "C5 AGE", "Ek Lg E ", "e SE ", "ASHEi ", "am ", etc.
-		name = name.replace(/^[A-Za-z]{1,3}(\s+[A-Za-z]{1,3}){0,4}\s+/, '');
-
-		// Remove any remaining leading/trailing special characters
-		name = name.replace(/^[^A-Z]+/i, '').trim();
-
-		// Skip if name is too short or matches known patterns
-		if (name.length < 2 || name.length > 60) {
-			continue;
-		}
-
-		// Skip if it's a system field
-		if (name.match(/^(PRODUCT|QTY|AMT|ITEM|PRICE|FID|Seq|App|Resp|Tran|SUBTOTAL|TAX|TOTAL|WHOLESALE|Member|SELF|CHECKOUT)$/i)) {
-			continue;
-		}
-
-		items.push(createItem(name, price, userIds));
-	}
-
-	console.log(`📋 Costco: Extracted ${items.length} items`);
-	return finalizeReceipt(items, receiptTotal, taxAmount, totalAmount);
-}/**
  * Generic receipt parser (fallback)
  *
  * Used when store is not recognized
