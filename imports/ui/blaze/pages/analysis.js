@@ -31,20 +31,26 @@ function computeGlobalAnalytics(bills, filterUserIds = []) {
 		
 		const billSummary = computeExpenseSummary(bill);
 		const thisTax = Number(bill.taxAmount || 0);
-		taxTotal += thisTax;
 		const taxPerUser = bill.users?.length ? thisTax / bill.users.length : 0;
+		
+		// Only aggregate spending for filtered users (or all users if no filter)
 		billSummary.perUser.forEach(entry => {
-			perUserMap.set(entry.userId, (perUserMap.get(entry.userId) || 0) + entry.amount + taxPerUser);
+			if (filterUserIds.length === 0 || filterUserIds.includes(entry.userId)) {
+				perUserMap.set(entry.userId, (perUserMap.get(entry.userId) || 0) + entry.amount + taxPerUser);
+			}
 		});
+		
+		// Track all users' names for filter chips
 		(bill.users || []).forEach(u => {
 			if (!userNameMap.has(u.id)) {
 				userNameMap.set(u.id, u.name);
 			}
 		});
-		itemTotal += billSummary.grandTotal;
-		const receiptDate = bill.createdAt instanceof Date ? bill.createdAt : new Date();
-		const key = `${receiptDate.getFullYear()}-${String(receiptDate.getMonth() + 1).padStart(2, '0')}`;
-		monthMap.set(key, (monthMap.get(key) || 0) + billSummary.grandTotal + thisTax);
+		
+		// Only count items and tax for filtered users
+		let billItemTotal = 0;
+		let billTaxTotal = 0;
+		let billItemCount = 0;
 		
 		// Track items - only count items that filtered users are assigned to
 		bill.items.forEach(it => {
@@ -60,15 +66,32 @@ function computeGlobalAnalytics(bills, filterUserIds = []) {
 			rec.total += it.price;
 			rec.count += 1;
 			itemMap.set(it.name, rec);
+			
+			billItemTotal += it.price;
+			billItemCount += 1;
 		});
 		
-		// Track stores
-		const storeName = bill.storeName || 'Unknown Store';
-		const storeRec = storeMap.get(storeName) || { total: 0, count: 0, itemCount: 0 };
-		storeRec.total += billSummary.grandTotal + thisTax;
-		storeRec.count += 1;
-		storeRec.itemCount += bill.items.length;
-		storeMap.set(storeName, storeRec);
+		// Only count tax if filtering and user participated
+		if (filterUserIds.length === 0 || billItemCount > 0) {
+			billTaxTotal = taxPerUser * (filterUserIds.length || bill.users?.length || 1);
+		}
+		
+		itemTotal += billItemTotal;
+		taxTotal += billTaxTotal;
+		
+		const receiptDate = bill.createdAt instanceof Date ? bill.createdAt : new Date();
+		const key = `${receiptDate.getFullYear()}-${String(receiptDate.getMonth() + 1).padStart(2, '0')}`;
+		monthMap.set(key, (monthMap.get(key) || 0) + billItemTotal + billTaxTotal);
+		
+		// Track stores - only count for filtered items
+		if (billItemCount > 0) {
+			const storeName = bill.storeName || 'Unknown Store';
+			const storeRec = storeMap.get(storeName) || { total: 0, count: 0, itemCount: 0 };
+			storeRec.total += billItemTotal + billTaxTotal;
+			storeRec.count += 1;
+			storeRec.itemCount += billItemCount;
+			storeMap.set(storeName, storeRec);
+		}
 	});
 	
 	const totalSpent = itemTotal + taxTotal;
@@ -129,6 +152,7 @@ function computeGlobalAnalytics(bills, filterUserIds = []) {
 Template.Analysis.onCreated(function () {
 	this.filter = new ReactiveVar([]);
 	this.global = new ReactiveVar(null);
+	this.allUsers = new ReactiveVar([]);
 	this.sub = this.subscribe('bills.all');
 	this.autorun(() => {
 		if (!this.sub.ready()) {
@@ -136,7 +160,15 @@ Template.Analysis.onCreated(function () {
 		}
 		const bills = Bills.find({}, { sort: { createdAt: -1 } }).fetch();
 		const filter = this.filter.get(); // React to filter changes
+		
+		// Compute analytics with current filter
 		this.global.set(computeGlobalAnalytics(bills, filter));
+		
+		// Always keep all users list for filter chips (computed without filter)
+		if (filter.length === 0) {
+			const allAnalytics = computeGlobalAnalytics(bills, []);
+			this.allUsers.set(allAnalytics.perUser);
+		}
 	});
 });
 
@@ -162,7 +194,14 @@ Template.Analysis.helpers({
 		return g.perUser.map(p => ({ ...p, barWidth: (p.amount / grand) * 100 }));
 	},
 	filterUsers() {
-		const g = Template.instance().global.get();
+		const inst = Template.instance();
+		// Show all users for filter chips, not just filtered ones
+		const allUsers = inst.allUsers.get();
+		if (allUsers && allUsers.length > 0) {
+			return allUsers;
+		}
+		// Fallback to current global if allUsers not set yet
+		const g = inst.global.get();
 		return g ? g.perUser : [];
 	},
 	hasFilter() {
