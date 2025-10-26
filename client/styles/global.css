@@ -41,6 +41,47 @@
 	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 
+.brand-logo {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 700;
+	font-size: 1.5rem;
+	text-decoration: none;
+	color: white !important;
+	transition: all 0.3s ease;
+	padding: 0.5rem 1rem;
+	border-radius: 12px;
+}
+
+.brand-logo:hover {
+	background: rgba(255, 255, 255, 0.1);
+	transform: translateY(-2px);
+}
+
+.brand-logo i {
+	font-size: 1.75rem;
+	animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.brand-text {
+	background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	font-weight: 800;
+	letter-spacing: 0.5px;
+}
+
+@keyframes pulse-icon {
+	0%, 100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.1);
+	}
+}
+
 /* ===== Purple Buttons ===== */
 .btn-purple {
 	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
@@ -189,35 +230,6 @@
 [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
 	color: var(--bs-gray-200);
 	background-color: rgba(255, 255, 255, 0.02);
-}
-
-/* ===== Analysis Page Styles ===== */
-.analysis-user-name {
-	min-width: 120px;
-}
-
-.analysis-bar-container {
-	height: 8px;
-	background: var(--bs-gray-300);
-	border-radius: 4px;
-}
-
-[data-bs-theme="dark"] .analysis-bar-container {
-	background: var(--bs-gray-700);
-}
-
-.analysis-bar-fill {
-	height: 100%;
-	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
-	border-radius: 4px;
-}
-
-.analysis-amount {
-	min-width: 110px;
-}
-
-.analysis-item-name {
-	max-width: 200px;
 }
 
 /* ===== Dark Mode Overrides ===== */
