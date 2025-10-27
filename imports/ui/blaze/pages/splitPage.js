@@ -3,6 +3,7 @@ import './splitPage.html';
 import '/client/styles/splitPage.css';
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
+import { Tracker } from 'meteor/tracker';
 import { Meteor } from 'meteor/meteor';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
 import { Bills } from '/imports/api/bills';
@@ -184,6 +185,29 @@ Template.SplitPage.helpers({
 	},
 });
 
+Template.SplitPage.onRendered(function() {
+	const _template = this;
+
+	// Ensure modal dismissal works properly
+	this.autorun(() => {
+		Tracker.afterFlush(() => {
+			// Add ESC key listener for modals
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'Escape') {
+					// Find any open modals and close them
+					const openModals = document.querySelectorAll('.modal.show');
+					openModals.forEach(modal => {
+						const modalInstance = window.bootstrap.Modal.getInstance(modal);
+						if (modalInstance && !modal.hasAttribute('data-bs-backdrop-static')) {
+							modalInstance.hide();
+						}
+					});
+				}
+			});
+		});
+	});
+});
+
 Template.SplitPage.events({
 	'click #hideHelpBtn'(e, tpl) {
 		tpl.showHelpInfo.set(false);
@@ -197,14 +221,63 @@ Template.SplitPage.events({
 		e.preventDefault();
 		tpl.showAddForm.set(false);
 	},
-	'click #toggleSplitBtn'(e, tpl) {
+	async 'click #toggleSplitBtn'(e, tpl) {
 		e.preventDefault();
+		const bill = Bills.findOne(tpl.billId);
 		const newState = !tpl.showSplitMode.get();
-		tpl.showSplitMode.set(newState);
-		// Turn off delete mode when entering split mode
-		if (newState) {
-			tpl.showDeleteButtons.set(false);
+
+		// If trying to enter split mode but no people exist, show warning
+		if (newState && (!bill?.users?.length)) {
+			const shouldAddPeople = await showConfirm(
+				'Ready to split items?\n\nFirst, add people to share the bill with. You can add them from your saved contacts or create new ones.',
+				{
+					okText: 'Add People',
+					cancelText: 'Skip for Now',
+					okButtonClass: 'btn-purple',
+					dismissible: true,
+				},
+			);
+
+			if (shouldAddPeople) {
+				// Try to add global users first
+				const globalUsers = GlobalUsers.find().fetch();
+				if (globalUsers.length > 0) {
+					try {
+						for (const user of globalUsers) {
+							await Meteor.callAsync('bills.addUser', tpl.billId, { id: user._id, name: user.name });
+						}
+						pushAlert('success', 'People added to bill');
+						// Now enable split mode
+						tpl.showSplitMode.set(true);
+						tpl.showDeleteButtons.set(false);
+					} catch (err) {
+						pushAlert('error', err.reason || 'Could not add people');
+						return;
+					}
+				} else {
+					// No global users, open the user modal to add some
+					pushAlert('info', 'Add people first using Manage People');
+					const modalEl = document.getElementById('userModal');
+					if (modalEl && window.bootstrap?.Modal) {
+						const modal = new window.bootstrap.Modal(modalEl, {
+							keyboard: true,    // Allow ESC key to close
+							backdrop: true,     // Allow clicking backdrop to close
+						});
+						modal.show();
+					}
+					return;
+				}
+			} else {
+				return; // User cancelled
+			}
+		} else {
+			tpl.showSplitMode.set(newState);
+			// Turn off delete mode when entering split mode
+			if (newState) {
+				tpl.showDeleteButtons.set(false);
+			}
 		}
+
 		// Close add form when clicking split button
 		tpl.showAddForm.set(false);
 	},
@@ -281,6 +354,7 @@ Template.SplitPage.events({
 	},
 	'click #managePeopleBtn'(e, tpl) {
 		e.preventDefault();
+
 		// Open the user modal
 		const modalEl = document.getElementById('userModal');
 		if (!modalEl || !window.bootstrap?.Modal) {
@@ -288,7 +362,10 @@ Template.SplitPage.events({
 			return;
 		}
 		try {
-			const modal = new window.bootstrap.Modal(modalEl);
+			const modal = new window.bootstrap.Modal(modalEl, {
+				keyboard: true,    // Allow ESC key to close
+				backdrop: true,     // Allow clicking backdrop to close
+			});
 
 			// Listen for when the modal is closed to sync users
 			modalEl.addEventListener('hidden.bs.modal', async function syncUsers() {

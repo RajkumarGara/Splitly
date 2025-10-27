@@ -501,3 +501,269 @@
 	background-color: #252936;
 	color: var(--bs-gray-200);
 }
+
+/* ===== Universal Header & Navigation ===== */
+.mobile-header {
+	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+	padding: 0.75rem 0;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1030;
+}
+
+[data-bs-theme="dark"] .mobile-header {
+	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.mobile-header .brand-logo {
+	justify-content: center;
+	margin: 0 auto;
+	width: fit-content;
+}
+
+.mobile-nav {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+	z-index: 1030;
+	padding: 0.75rem 0 1.5rem 0;
+}
+
+[data-bs-theme="dark"] .mobile-nav {
+	background: rgba(13, 17, 23, 0.95);
+	border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-nav-container {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	max-width: 500px;
+	margin: 0 auto;
+	padding: 0 1rem;
+}
+
+.mobile-nav-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-decoration: none;
+	color: var(--bs-gray-600);
+	transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+	padding: 0.5rem;
+	border-radius: 12px;
+	min-width: 80px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+	/* Prevent layout shifts */
+	width: 80px;
+	flex-shrink: 0;
+	/* Improve rendering performance */
+	will-change: transform, background-color, color;
+}
+
+.mobile-nav-item span {
+	/* Prevent text width changes when font-weight changes */
+	font-feature-settings: "tnum";
+	text-align: center;
+	width: 100%;
+	white-space: nowrap;
+	/* Remove overflow hidden to show full text */
+}
+
+.mobile-nav-item i {
+	font-size: 1.25rem;
+	margin-bottom: 0.25rem;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item:focus {
+	color: var(--purple-primary);
+	background: rgba(99, 102, 241, 0.1);
+	text-decoration: none;
+}
+
+.mobile-nav-item.active {
+	color: var(--purple-primary);
+	background: rgba(99, 102, 241, 0.15);
+	font-weight: 600;
+	/* Remove translateY to prevent vertical shifts affecting horizontal layout */
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+[data-bs-theme="dark"] .mobile-nav-item {
+	color: var(--bs-gray-400);
+}
+
+[data-bs-theme="dark"] .mobile-nav-item:hover,
+[data-bs-theme="dark"] .mobile-nav-item:focus {
+	color: var(--purple-light);
+	background: rgba(167, 139, 250, 0.15);
+}
+
+[data-bs-theme="dark"] .mobile-nav-item.active {
+	color: var(--purple-light);
+	background: rgba(167, 139, 250, 0.2);
+	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Universal layout adjustments for bottom nav only */
+body {
+	padding-bottom: 100px;
+}
+
+/* Reset alerts to default position */
+.alerts-container {
+	top: 1rem !important;
+}
+
+/* ===== Page Header Spacing ===== */
+/* Page headings consistent spacing */
+.page-header {
+	margin-top: 1rem;
+	margin-bottom: 2rem;
+}
+
+/* Universal page title class for consistent styling */
+.page-title {
+	margin-top: 0;
+	margin-bottom: 2rem;
+	padding-top: 0.5rem;
+	text-align: center;
+	font-weight: 700;
+	font-size: 1.75rem;
+	color: var(--purple-primary);
+	position: relative;
+	min-height: 2.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: all 0.2s ease;
+}
+
+.page-title i {
+	font-size: 1.75rem;
+}
+
+[data-bs-theme="dark"] .page-title {
+	color: var(--purple-light);
+}
+
+/* Container and layout improvements */
+.container {
+	padding-top: max(2rem, calc(2rem + env(safe-area-inset-top)));
+	transition: padding 0.2s ease;
+	/* Prevent layout jumps during navigation */
+	min-height: calc(100vh - 200px);
+}
+
+.page-content {
+	animation: fadeIn 0.15s ease-out 0.05s both;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Specific page heading improvements */
+h1, h2 {
+	margin-top: 0.5rem;
+	margin-bottom: 1.5rem;
+}
+
+/* Universal navigation adjustments */
+.mobile-nav {
+	padding-bottom: max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom)));
+}
+
+/* Enhanced navigation for very small screens */
+@media (max-width: 576px) {
+	.mobile-nav-item {
+		min-width: 70px;
+		width: 70px;
+		font-size: 0.7rem;
+	}
+	
+	.mobile-nav-item i {
+		font-size: 1.1rem;
+		margin-bottom: 0.125rem;
+	}
+	
+	body {
+		padding-bottom: 95px;
+	}
+	
+	/* Adjust container padding for smaller screens */
+	.container {
+		padding-top: 0.75rem;
+	}
+	
+	/* Reduce header spacing on mobile for better space utilization */
+	h1, h2 {
+		margin-top: 0.25rem;
+		margin-bottom: 1rem;
+	}
+}
+
+/* Desktop adjustments for larger screens */
+@media (min-width: 992px) {
+	.mobile-nav-container {
+		max-width: 700px;
+		padding: 0 2rem;
+	}
+	
+	.mobile-nav-item {
+		min-width: 100px;
+		width: 100px;
+		font-size: 0.85rem;
+	}
+}
+
+/* Extra large screens - more spacious layout */
+@media (min-width: 1200px) {
+	.mobile-nav-container {
+		max-width: 800px;
+		padding: 0 3rem;
+	}
+	
+	.mobile-nav-item {
+		min-width: 120px;
+		width: 120px;
+		font-size: 0.9rem;
+	}
+}
+
+/* Enhanced dropdown and modal styling */
+.dropdown-menu {
+	border: none !important;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.modal-content {
+	border: none !important;
+	box-shadow: 0 16px 64px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Ensure navigation stays above all overlays */
+.mobile-nav {
+	z-index: 1080 !important;
+}

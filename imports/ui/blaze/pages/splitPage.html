@@ -17,18 +17,7 @@
 					</div>
 				{{/if}}
 
-				{{#unless hasPeople}}
-					<div class="alert alert-warning d-flex justify-content-between align-items-center">
-						<div>
-							<i class="bi bi-exclamation-triangle-fill"></i> 
-							<strong>No people assigned to this bill!</strong> 
-							Add people to split expenses.
-						</div>
-						<button class="btn btn-sm btn-purple" id="addPeopleFromSplit">
-							<i class="bi bi-person-plus"></i> Add People
-						</button>
-					</div>
-				{{/unless}}
+
 
 				{{#if hasItems}}
 					<!-- Items Section -->
@@ -177,31 +166,33 @@
 								</div>
 							{{/if}}
 
-							<!-- Per Person Breakdown -->
-							<h6 class="mb-3"><i class="bi bi-person-lines-fill"></i> Share Per Person</h6>
-							
-							<div class="table-responsive">
-								<table class="table table-bordered">
-									<thead class="table-light">
-										<tr>
-											<th class="text-center">Person</th>
-											<th class="text-center">Items</th>
-											<th class="text-center">Tax</th>
-											<th class="text-center">Total</th>
-										</tr>
-									</thead>
-									<tbody>
-										{{#each finalPerUserRows}}
+							<!-- Per Person Breakdown - Only show if there are people -->
+							{{#if hasPeople}}
+								<h6 class="mb-3"><i class="bi bi-person-lines-fill"></i> Share Per Person</h6>
+								
+								<div class="table-responsive">
+									<table class="table table-bordered">
+										<thead class="table-light">
 											<tr>
-												<td class="text-center"><strong>{{name}}</strong></td>
-												<td class="text-center">${{formatMoney itemsSubtotal}}</td>
-												<td class="text-center">${{formatMoney taxShare}}</td>
-												<td class="text-center"><strong class="text-purple">${{formatMoney totalRounded}}</strong></td>
+												<th class="text-center">Person</th>
+												<th class="text-center">Items</th>
+												<th class="text-center">Tax</th>
+												<th class="text-center">Total</th>
 											</tr>
-										{{/each}}
-									</tbody>
-								</table>
-							</div>
+										</thead>
+										<tbody>
+											{{#each finalPerUserRows}}
+												<tr>
+													<td class="text-center"><strong>{{name}}</strong></td>
+													<td class="text-center">${{formatMoney itemsSubtotal}}</td>
+													<td class="text-center">${{formatMoney taxShare}}</td>
+													<td class="text-center"><strong class="text-purple">${{formatMoney totalRounded}}</strong></td>
+												</tr>
+											{{/each}}
+										</tbody>
+									</table>
+								</div>
+							{{/if}}
 						</div>
 						<div class="card-footer bg-white">
 							<div class="d-flex gap-2">

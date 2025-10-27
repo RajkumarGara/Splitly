@@ -49,6 +49,67 @@
 	color: var(--purple-light);
 }
 
+/* ===== Blur Effect for Dropdown Menu ===== */
+.page-blur {
+	filter: blur(5px) brightness(0.7) !important;
+	pointer-events: none !important;
+	transition: all 0.3s ease !important;
+	transform: scale(0.97) !important;
+	position: relative !important;
+	z-index: 1 !important;
+}
+
+.dropdown-backdrop {
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: 0 !important;
+	background: rgba(0, 0, 0, 0.3) !important;
+	z-index: 1040 !important;
+	backdrop-filter: blur(2px) !important;
+	transition: all 0.2s ease !important;
+	cursor: pointer !important;
+}
+
+[data-bs-theme="dark"] .dropdown-backdrop {
+	background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Keep bottom navigation visible and unblurred */
+.mobile-nav {
+	z-index: 1070 !important;
+	filter: none !important;
+	pointer-events: auto !important;
+	position: fixed !important;
+}
+
+/* Ensure summary card and footer stay in place */
+.card-footer {
+	position: relative !important;
+	z-index: 1045 !important;
+	filter: none !important;
+}
+
+/* Keep dropdown menu visible */
+.dropdown-menu {
+	z-index: 1050 !important;
+	filter: none !important;
+	pointer-events: auto !important;
+}
+
+/* Ensure dropdown button stays accessible */
+.dropdown {
+	z-index: 1050 !important;
+	position: relative !important;
+}
+
+.dropdown .btn {
+	z-index: 1051 !important;
+	position: relative !important;
+	filter: none !important;
+}
+
 .delete-button-wrapper {
 	min-width: 45px;
 	display: flex;

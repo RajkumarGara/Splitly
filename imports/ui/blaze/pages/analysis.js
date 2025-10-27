@@ -153,11 +153,10 @@ Template.Analysis.onCreated(function () {
 	this.filter = new ReactiveVar([]);
 	this.global = new ReactiveVar(null);
 	this.allUsers = new ReactiveVar([]);
-	this.sub = this.subscribe('bills.all');
+
+	// No need to subscribe again - main layout already subscribes to bills.all
 	this.autorun(() => {
-		if (!this.sub.ready()) {
-			return;
-		}
+		// Use data immediately if available from main subscription
 		const bills = Bills.find({}, { sort: { createdAt: -1 } }).fetch();
 		const filter = this.filter.get(); // React to filter changes
 
@@ -175,9 +174,7 @@ Template.Analysis.onCreated(function () {
 Template.Analysis.helpers({
 	hasData() {
 		const inst = Template.instance();
-		if (!inst.sub.ready()) {
-			return false;
-		}
+		// Use cached data if available, don't wait for subscription
 		const g = inst.global.get();
 		return !!(g && g.receiptCount > 0);
 	},

@@ -175,19 +175,11 @@ Template.Dashboard.events({
 
 	'click #scanReceiptBtn'(e, tpl) {
 		if (tpl.ocrProcessing.get() || tpl.actionLock) {return;}
-		if (!GlobalUsers.find().count()) {
-			pushAlert('error', 'Please add people first');
-			return;
-		}
 		tpl.find('#scanFileInput').click();
 	},
 
 	'click #uploadReceiptBtn'(e, tpl) {
 		if (tpl.ocrProcessing.get() || tpl.actionLock) {return;}
-		if (!GlobalUsers.find().count()) {
-			pushAlert('error', 'Please add people first');
-			return;
-		}
 		tpl.find('#receiptFileInput').click();
 	},
 
@@ -255,9 +247,10 @@ async function handleFileUpload(e, tpl) {
 
 		// Try Gemini AI first (faster and more accurate)
 		try {
+			const globalUsers = GlobalUsers.find().fetch();
 			const billId = await Meteor.callAsync('bills.insert', {
 				createdAt: new Date(),
-				users: GlobalUsers.find().fetch().map(u => ({ id: u._id, name: u.name })),
+				users: globalUsers.map(u => ({ id: u._id, name: u.name })),
 				items: [],
 			});
 
@@ -298,6 +291,14 @@ async function handleFileUpload(e, tpl) {
 				} else {
 					pushAlert('warning', 'No items detected. Please add items manually.');
 				}
+
+				// Guide user to add people if none exist
+				if (globalUsers.length === 0) {
+					setTimeout(() => {
+						pushAlert('info', 'Add people to split the bill with them!');
+					}, 1000);
+				}
+
 				FlowRouter.go(`/split/${billId}`);
 				e.target.value = '';
 				return;
@@ -352,9 +353,10 @@ async function handleFileUpload(e, tpl) {
 			}
 			tpl.ocrStatus.set('💾 Saving data...');
 
+			const globalUsers = GlobalUsers.find().fetch();
 			const billId = await Meteor.callAsync('bills.insert', {
 				createdAt: new Date(),
-				users: GlobalUsers.find().fetch().map(u => ({ id: u._id, name: u.name })),
+				users: globalUsers.map(u => ({ id: u._id, name: u.name })),
 				items: [],
 			});
 
@@ -374,6 +376,15 @@ async function handleFileUpload(e, tpl) {
 				} else {
 					pushAlert('warning', 'No items detected. Please add items manually.');
 				}
+
+				// Guide user to add people if none exist
+				const finalGlobalUsers = GlobalUsers.find().fetch();
+				if (finalGlobalUsers.length === 0) {
+					setTimeout(() => {
+						pushAlert('info', 'Add people to split the bill with them!');
+					}, 1000);
+				}
+
 				FlowRouter.go(`/split/${billId}`);
 			} catch (_err2) {
 				tpl.ocrProcessing.set(false);

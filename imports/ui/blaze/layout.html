@@ -1,31 +1,42 @@
 <template name="MainLayout">
-	<nav class="navbar navbar-expand-lg navbar-dark navbar-purple mb-4">
-		<div class="container-fluid">
-			<a class="navbar-brand brand-logo" href="/">
-				<i class="bi bi-receipt-cutoff"></i>
-				<span class="brand-text">Splitly</span>
-			</a>
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsplitly"><span class="navbar-toggler-icon"></span></button>
-			<div class="collapse navbar-collapse" id="navbarsplitly">
-				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
-					<li class="nav-item"><a class="nav-link {{isActive '/'}}" href="/">Home</a></li>
-					<li class="nav-item"><a class="nav-link {{isActive '/history'}}" href="/history">History</a></li>
-					{{#if showAnalysis}}<li class="nav-item"><a class="nav-link {{isActive '/analysis'}}" href="/analysis">Analysis</a></li>{{/if}}
-					<li class="nav-item"><a class="nav-link {{isActive '/settings'}}" href="/settings">Settings</a></li>
-				</ul>
-			</div>
-		</div>
-	</nav>
 	{{> Alerts}}
-	<div class="container pb-4">
+	<div class="container pb-5 pb-lg-4">
 		{{#if notReady}}
-			<div class="text-center py-4">
-				<div class="spinner-border" role="status"><span class="visually-hidden">Loading</span></div>
-				<div class="mt-2 small text-muted">Syncing bills...</div>
+			<div class="text-center py-5">
+				<div class="spinner-border text-purple" role="status"><span class="visually-hidden">Loading</span></div>
+				<div class="mt-3 text-muted">Syncing bills...</div>
+			</div>
+		{{else}}
+			<div class="page-content">
+				{{> Template.dynamic template=yield}}
 			</div>
 		{{/if}}
-		{{> Template.dynamic template=yield}}
 	</div>
+
+	<!-- Bottom Navigation (visible on all screen sizes) -->
+
+	<!-- Bottom Navigation (visible on all screen sizes) -->
+	<nav class="mobile-nav">
+		<div class="mobile-nav-container">
+			<a href="/" class="mobile-nav-item {{isActive '/'}}">
+				<i class="bi bi-house-door"></i>
+				<span>Home</span>
+			</a>
+			<a href="/history" class="mobile-nav-item {{isActive '/history'}}">
+				<i class="bi bi-clock-history"></i>
+				<span>History</span>
+			</a>
+			<a href="/analysis" class="mobile-nav-item {{isActive '/analysis'}}">
+				<i class="bi bi-graph-up"></i>
+				<span>Analysis</span>
+			</a>
+			<a href="/settings" class="mobile-nav-item {{isActive '/settings'}}">
+				<i class="bi bi-gear"></i>
+				<span>Settings</span>
+			</a>
+		</div>
+	</nav>
+
 	{{> UserModal}}
 	{{> ConfirmModal}}
 </template>
