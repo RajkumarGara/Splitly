@@ -1,38 +1,6 @@
 /* Analysis Page Styles */
 
-/* ===== Page Header ===== */
-.analysis-header {
-	margin-bottom: 2rem;
-}
-
-.analysis-title {
-	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	background-clip: text;
-	font-weight: 700;
-	font-size: 2rem;
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	justify-content: center;
-}
-
-.analysis-title i {
-	font-size: 2rem;
-	-webkit-text-fill-color: var(--purple-primary);
-}
-
-[data-bs-theme="dark"] .analysis-title {
-	background: linear-gradient(135deg, var(--purple-light) 0%, #c4b5fd 100%);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	background-clip: text;
-}
-
-[data-bs-theme="dark"] .analysis-title i {
-	-webkit-text-fill-color: var(--purple-light);
-}
+/* Analysis page now uses global .page-title class for consistency */
 
 /* ===== Stat Cards ===== */
 .stat-card {

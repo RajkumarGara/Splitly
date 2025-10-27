@@ -28,10 +28,13 @@
 		}
 	</style>
 	
-	<div class="d-flex justify-content-center align-items-center mb-3 position-relative">
-		<h2 class="text-purple text-center mb-0"><i class="bi bi-clock-history"></i> History</h2>
+	<div class="position-relative mb-3">
+		<h2 class="page-title">
+			<i class="bi bi-clock-history"></i>
+			History
+		</h2>
 		{{#if hasSelection}}
-			<button class="btn btn-danger position-absolute end-0" id="deleteSelectedBtn">
+			<button class="btn btn-danger position-absolute top-0 end-0" id="deleteSelectedBtn">
 				<i class="bi bi-trash"></i> Delete {{selectedCount}} Selected
 			</button>
 		{{/if}}

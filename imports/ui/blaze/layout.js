@@ -49,13 +49,21 @@ export function showConfirm(message, options = {}) {
 		const okBtn = document.getElementById('confirmOkBtn');
 		if (okBtn) {
 			okBtn.textContent = options.okText || 'OK';
+			// Change button style based on action type
+			okBtn.className = 'btn ' + (options.okButtonClass || 'btn-danger');
 		}
 		const cancelBtn = document.getElementById('confirmCancelBtn');
 		if (cancelBtn) {
 			cancelBtn.textContent = options.cancelText || 'Cancel';
 		}
 		wireConfirmHandlers();
-		new window.bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false }).show();
+
+		// Allow dismissible modals for non-critical confirmations
+		const modalOptions = options.dismissible ?
+			{ backdrop: true, keyboard: true } :
+			{ backdrop: 'static', keyboard: false };
+
+		new window.bootstrap.Modal(modalEl, modalOptions).show();
 	});
 }
 
@@ -98,17 +106,28 @@ Template.MainLayout.onRendered(function () {
 		}
 	});
 });
+// Track if we've ever had a successful bills subscription
+const initialLoadState = new ReactiveVar(false);
+
 Template.MainLayout.onCreated(function () {
 	this.subHandle = this.subscribe('bills.all');
+
+	// Mark as loaded once we have data or the subscription is ready
+	this.autorun(() => {
+		if (this.subHandle.ready() || Bills.find({}).count() > 0) {
+			initialLoadState.set(true);
+		}
+	});
+
 	// Try loading cached bills if offline/slow (if enabled)
 	const flag = localStorage.getItem('flag_indexedDbSync');
 	const enabled = flag === null ? config.features?.indexedDbSync : flag === 'true';
 	if (enabled) {
 		loadCachedBills()
 			.then(cached => {
-				if (cached.length > 0 && !this.subHandle.ready()) {
-					// Bills loaded from IndexedDB cache
-					// Bills collection will be populated from subscription when ready
+				if (cached.length > 0) {
+					// Bills loaded from IndexedDB cache, mark as loaded
+					initialLoadState.set(true);
 				}
 			})
 			.catch(err => console.error('IndexedDB load error:', err));
@@ -122,13 +141,23 @@ Template.MainLayout.helpers({
 		if (currentPath.startsWith('/split/')) {
 			return false;
 		}
-		return !Template.instance().subHandle.ready();
+
+		// Don't show spinner during normal navigation between main pages
+		const isMainNavPage = ['/', '/history', '/analysis', '/settings'].includes(currentPath);
+		if (isMainNavPage && initialLoadState.get()) {
+			return false;
+		}
+
+		// Only show spinner if we've never loaded bills data before
+		// This prevents the flicker on navigation
+		return !initialLoadState.get() && !Template.instance().subHandle.ready();
 	},
 	isActive(path) {
-		return FlowRouter.current().path === path ? 'active' : '';
-	},
-	showAnalysis() {
-		return !!config.features?.analysisPage;
+		const currentPath = FlowRouter.current().path;
+		// Handle root path and analysis path matching
+		if (path === '/' && currentPath === '/') {return 'active';}
+		if (path !== '/' && currentPath.startsWith(path)) {return 'active';}
+		return '';
 	},
 	alerts() {
 		return alertsVar.get();
@@ -140,6 +169,10 @@ Template.Alerts.events({
 		const id = e.currentTarget.getAttribute('data-id');
 		alertsVar.set(alertsVar.get().filter(a => a.id !== id));
 	},
+});
+
+Template.MainLayout.onDestroyed(function () {
+	// Template cleanup - the subscription will be automatically handled by Meteor
 });
 
 export { pushAlert };
