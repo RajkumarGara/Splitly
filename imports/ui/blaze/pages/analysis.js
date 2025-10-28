@@ -154,24 +154,35 @@ Template.Analysis.onCreated(function () {
 	this.global = new ReactiveVar(null);
 	this.allUsers = new ReactiveVar([]);
 
-	// No need to subscribe again - main layout already subscribes to bills.all
+	// Track subscription ready state
+	this.subscriptionReady = new ReactiveVar(false);
+
+	// Subscribe and track ready state
 	this.autorun(() => {
+		const handle = this.subscribe('bills.all');
+		this.subscriptionReady.set(handle.ready());
+
 		// Use data immediately if available from main subscription
-		const bills = Bills.find({}, { sort: { createdAt: -1 } }).fetch();
-		const filter = this.filter.get(); // React to filter changes
+		if (handle.ready()) {
+			const bills = Bills.find({}, { sort: { createdAt: -1 } }).fetch();
+			const filter = this.filter.get(); // React to filter changes
 
-		// Compute analytics with current filter
-		this.global.set(computeGlobalAnalytics(bills, filter));
+			// Compute analytics with current filter
+			this.global.set(computeGlobalAnalytics(bills, filter));
 
-		// Always keep all users list for filter chips (computed without filter)
-		if (filter.length === 0) {
-			const allAnalytics = computeGlobalAnalytics(bills, []);
-			this.allUsers.set(allAnalytics.perUser);
+			// Always keep all users list for filter chips (computed without filter)
+			if (filter.length === 0) {
+				const allAnalytics = computeGlobalAnalytics(bills, []);
+				this.allUsers.set(allAnalytics.perUser);
+			}
 		}
 	});
 });
 
 Template.Analysis.helpers({
+	subscriptionReady() {
+		return Template.instance().subscriptionReady.get();
+	},
 	hasData() {
 		const inst = Template.instance();
 		// Use cached data if available, don't wait for subscription

@@ -11,9 +11,20 @@ Template.History.onCreated(function () {
 	this.selectedReceipts = new ReactiveVar([]);
 	const savedPref = localStorage.getItem('splitly_showHelp');
 	this.showHelpInfo = new ReactiveVar(savedPref === null ? true : savedPref === 'true');
+
+	// Track subscription ready state
+	this.subscriptionReady = new ReactiveVar(false);
+
+	this.autorun(() => {
+		const handle = this.subscribe('bills.all');
+		this.subscriptionReady.set(handle.ready());
+	});
 });
 
 Template.History.helpers({
+	subscriptionReady() {
+		return Template.instance().subscriptionReady.get();
+	},
 	bills() {
 		try {
 			if (!Bills) {return [];}

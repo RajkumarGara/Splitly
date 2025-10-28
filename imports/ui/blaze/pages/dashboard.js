@@ -60,6 +60,14 @@ Template.Dashboard.onCreated(function () {
 	this.showInstallPrompt = new ReactiveVar(false);
 	this.deferredPrompt = null;
 	this.actionLock = false;
+
+	// Track subscription ready state
+	this.subscriptionReady = new ReactiveVar(false);
+
+	this.autorun(() => {
+		const handle = this.subscribe('bills.all');
+		this.subscriptionReady.set(handle.ready());
+	});
 });
 
 Template.Dashboard.onDestroyed(function () {
@@ -103,6 +111,9 @@ Template.Dashboard.onRendered(function () {
 /* ===== TEMPLATE HELPERS ===== */
 
 Template.Dashboard.helpers({
+	subscriptionReady() {
+		return Template.instance().subscriptionReady.get();
+	},
 	showInstallPrompt() {
 		return Template.instance().showInstallPrompt.get();
 	},

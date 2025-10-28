@@ -4,7 +4,8 @@
 		Spending Insights
 	</h2>
 	
-	{{#if hasData}}
+	{{#if subscriptionReady}}
+		{{#if hasData}}
 		{{#with global}}
 			<!-- Stat Cards -->
 			<div class="row g-3 mb-4">
@@ -184,13 +185,14 @@
 				</p>
 			</div>
 		{{/with}}
-	{{else}}
-		<div class="analysis-empty-state">
-			<i class="bi bi-pie-chart analysis-empty-icon"></i>
-			<p class="analysis-empty-text">No data to analyze yet. Create bills to see insights.</p>
-			<a href="/" class="btn btn-purple btn-lg">
-				<i class="bi bi-plus-circle"></i> Add Your First Receipt
-			</a>
-		</div>
+		{{else}}
+			<div class="analysis-empty-state">
+				<i class="bi bi-pie-chart analysis-empty-icon"></i>
+				<p class="analysis-empty-text">No data to analyze yet. Create bills to see insights.</p>
+				<a href="/" class="btn btn-purple btn-lg">
+					<i class="bi bi-plus-circle"></i> Add Your First Receipt
+				</a>
+			</div>
+		{{/if}}
 	{{/if}}
 </template>
