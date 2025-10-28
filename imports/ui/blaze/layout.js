@@ -112,6 +112,40 @@ const initialLoadState = new ReactiveVar(false);
 Template.MainLayout.onCreated(function () {
 	this.subHandle = this.subscribe('bills.all');
 
+	// Production debugging for reload issues
+	if (window.location.hostname !== 'localhost') {
+		console.log('🔍 Production load at:', new Date().toISOString());
+		
+		// Track reload frequency to detect loops
+		const reloadCount = parseInt(sessionStorage.getItem('reload_count') || '0') + 1;
+		sessionStorage.setItem('reload_count', reloadCount.toString());
+		
+		if (reloadCount > 5) {
+			console.error('🚨 RELOAD LOOP DETECTED! Count:', reloadCount);
+			console.error('🛑 Possible causes: Hot code push, auto-deploy, or connection issues');
+		}
+		
+		// Track hot code push
+		if (Package && Package['hot-code-push']) {
+			console.log('🔥 Hot code push package detected');
+		}
+		
+		// Track autoupdate  
+		if (Package && Package.autoupdate) {
+			console.log('🔄 Autoupdate package detected');
+		}
+		
+		// Track websocket connection
+		if (Meteor.connection) {
+			console.log('🌐 Meteor connection status:', Meteor.connection.status());
+		}
+		
+		// Clear reload count after 30 seconds of stability
+		setTimeout(() => {
+			sessionStorage.setItem('reload_count', '0');
+		}, 30000);
+	}
+
 	// Mark as loaded once we have data or the subscription is ready
 	this.autorun(() => {
 		if (this.subHandle.ready() || Bills.find({}).count() > 0) {
