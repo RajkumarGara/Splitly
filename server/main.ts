@@ -36,13 +36,4 @@ Meteor.startup(() => {
 	if (!process.env.GOOGLE_GEMINI_API_KEY) {
 		console.warn('⚠️ Google Gemini API key not configured - using Tesseract fallback');
 	}
-
-	// Production debugging for database connection
-	try {
-		const { Bills } = require('/imports/api/bills');
-		const billCount = Bills.find({}).count();
-		console.log('🗄️ Database connection OK - Bills count:', billCount);
-	} catch (err) {
-		console.error('❌ Database connection error:', err);
-	}
 });
