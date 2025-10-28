@@ -101,10 +101,12 @@ async function extractWithTokens(
 	const prompt = `Extract receipt data. Output ONLY valid JSON, no explanations.
 
 Rules:
-- Clean item names (remove codes/numbers)
+- Extract COMPLETE item names including all descriptive text (e.g. "GV 40PK", "CHRM SOFT", "ORG MILK") - don't truncate or abbreviate
+- Remove only barcode numbers and tax codes (F, N, T) from the end
+- Keep brand names, sizes, quantities, and product descriptions
 - 2 decimal prices
 - IMPORTANT: When you see discount lines (like "Discount (Item Name) -$3.60"), DO NOT create separate discount items. Instead, subtract the discount amount from the original item's price. For example, if "PUMPKIN SEED $8.99" has "Discount (Pumpkin Seed) -$3.60", output the item as {"name":"PUMPKIN SEED","price":5.39}
-- Skip quantity calculations
+- Skip quantity calculations and weight calculations
 - Get subtotal, tax, total
 - Extract date and time from receipt (MUST include AM/PM if present)
 

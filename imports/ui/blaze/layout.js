@@ -112,35 +112,12 @@ const initialLoadState = new ReactiveVar(false);
 Template.MainLayout.onCreated(function () {
 	this.subHandle = this.subscribe('bills.all');
 
-	// Add production debugging
-	console.log('🔍 Layout created, starting subscription...');
-
 	// Mark as loaded once we have data or the subscription is ready
 	this.autorun(() => {
-		const isReady = this.subHandle.ready();
-		const billCount = Bills.find({}).count();
-		
-		console.log('📊 Subscription state:', { 
-			ready: isReady, 
-			billCount,
-			initialLoaded: initialLoadState.get() 
-		});
-
-		if (isReady || billCount > 0) {
-			if (!initialLoadState.get()) {
-				console.log('✅ Marking as loaded');
-				initialLoadState.set(true);
-			}
-		}
-	});
-
-	// Production fallback: Force load after 10 seconds to prevent infinite spinner
-	this.loadTimeout = setTimeout(() => {
-		if (!initialLoadState.get()) {
-			console.warn('⚠️ Force loading due to timeout - subscription may have failed');
+		if (this.subHandle.ready() || Bills.find({}).count() > 0) {
 			initialLoadState.set(true);
 		}
-	}, 10000);
+	});
 
 	// Try loading cached bills if offline/slow (if enabled)
 	const flag = localStorage.getItem('flag_indexedDbSync');
@@ -148,7 +125,6 @@ Template.MainLayout.onCreated(function () {
 	if (enabled) {
 		loadCachedBills()
 			.then(cached => {
-				console.log('💾 Cached bills loaded:', cached.length);
 				if (cached.length > 0) {
 					// Bills loaded from IndexedDB cache, mark as loaded
 					initialLoadState.set(true);
@@ -196,10 +172,6 @@ Template.Alerts.events({
 });
 
 Template.MainLayout.onDestroyed(function () {
-	// Clear timeout to prevent memory leaks
-	if (this.loadTimeout) {
-		clearTimeout(this.loadTimeout);
-	}
 	// Template cleanup - the subscription will be automatically handled by Meteor
 });
 
