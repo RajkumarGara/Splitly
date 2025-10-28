@@ -13,7 +13,7 @@ RUN meteor npm install
 # Copy rest of application files
 COPY . .
 
-# Build the Meteor application
+# Build the Meteor application (cache busting handled by Render's auto-deploy)
 RUN meteor build --directory /build --server-only --architecture os.linux.x86_64
 
 # Production stage

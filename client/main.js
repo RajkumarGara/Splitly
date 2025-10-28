@@ -26,27 +26,25 @@ Meteor.startup(() => {
 	if ('serviceWorker' in navigator) {
 		navigator.serviceWorker.register('/service-worker.js')
 			.then((registration) => {
-				if (process.env.NODE_ENV !== 'production') {
-					console.log('Service Worker registered:', registration);
-				}
+				// Check for updates on page load and focus
+				registration.update();
+				window.addEventListener('focus', () => {
+					registration.update();
+				});
 
-				// Check for updates
+				// Handle updates
 				registration.addEventListener('updatefound', () => {
 					const newWorker = registration.installing;
 					newWorker.addEventListener('statechange', () => {
 						if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-							// New service worker available, could show update notification
-							if (process.env.NODE_ENV !== 'production') {
-								console.log('New service worker available');
-							}
+							// New version available - reload gracefully
+							window.location.reload();
 						}
 					});
 				});
 			})
 			.catch((error) => {
-				if (process.env.NODE_ENV !== 'production') {
-					console.error('Service Worker registration failed:', error);
-				}
+				console.error('Service Worker registration failed:', error);
 			});
 	}
 });

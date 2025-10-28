@@ -2,11 +2,12 @@
 /* global self, caches, fetch, Response, Headers */
 
 // Splitly Service Worker - Handles offline caching and PWA functionality
-const CACHE_NAME = 'splitly-v1';
-const RUNTIME_CACHE = 'splitly-runtime-v1';
+const CACHE_VERSION = 'v1';
+const CACHE_NAME = `splitly-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `splitly-runtime-${CACHE_VERSION}`;
 
 // Assets to cache on install
-const PRECACHE_URLS = [
+const urlsToCache = [
 	'/',
 	'/manifest.json',
 	'/favicon.svg',
@@ -14,25 +15,35 @@ const PRECACHE_URLS = [
 	'/icons/icon-512x512.svg',
 ];
 
-// Install event - cache essential assets
-self.addEventListener('install', (event) => {
+// Install event - cache core files
+self.addEventListener('install', event => {
 	event.waitUntil(
 		caches.open(CACHE_NAME)
-			.then((cache) => cache.addAll(PRECACHE_URLS))
-			.then(() => self.skipWaiting()),
+			.then(cache => cache.addAll(urlsToCache))
+			.then(() => self.skipWaiting())
+			.catch(error => {
+				console.error('SW Cache installation failed:', error);
+				throw error;
+			}),
 	);
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
+// Activate event - clean up old caches and take control
+self.addEventListener('activate', event => {
 	event.waitUntil(
-		caches.keys().then((cacheNames) => {
-			return Promise.all(
-				cacheNames
-					.filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
-					.map((name) => caches.delete(name)),
-			);
-		}).then(() => self.clients.claim()),
+		Promise.all([
+			// Clean up old caches
+			caches.keys().then(cacheNames => {
+				const deletionPromises = cacheNames.map(cacheName => {
+					if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+						return caches.delete(cacheName);
+					}
+				}).filter(Boolean);
+				return Promise.all(deletionPromises);
+			}),
+			// Take control of all clients immediately
+			self.clients.claim(),
+		]),
 	);
 });
 

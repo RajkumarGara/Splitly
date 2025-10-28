@@ -1,7 +1,7 @@
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
-import { Bills } from '/imports/api/bills';
+import { Bills } from '/imports/api/models';
 import { cacheBills, loadCachedBills } from '/imports/infra/indexedDb';
 import config from '/config/app.config.json';
 import './layout.html';
@@ -43,8 +43,9 @@ export function showConfirm(message, options = {}) {
 		confirmResolver = resolve;
 		const msgEl = document.getElementById('confirmModalMessage');
 		if (msgEl) {
-			// Convert line breaks to <br> for proper HTML rendering
-			msgEl.innerHTML = message.replace(/\n/g, '<br>');
+			// Safely handle line breaks - escape HTML to prevent XSS
+			const escapedMessage = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			msgEl.innerHTML = escapedMessage.replace(/\n/g, '<br>');
 		}
 		const okBtn = document.getElementById('confirmOkBtn');
 		if (okBtn) {
@@ -112,38 +113,20 @@ const initialLoadState = new ReactiveVar(false);
 Template.MainLayout.onCreated(function () {
 	this.subHandle = this.subscribe('bills.all');
 
-	// Production debugging for reload issues
+	// Monitor for excessive reloads in production (minimal logging)
 	if (window.location.hostname !== 'localhost') {
-		console.log('🔍 Production load at:', new Date().toISOString());
-		
-		// Track reload frequency to detect loops
-		const reloadCount = parseInt(sessionStorage.getItem('reload_count') || '0') + 1;
-		sessionStorage.setItem('reload_count', reloadCount.toString());
-		
-		if (reloadCount > 5) {
-			console.error('🚨 RELOAD LOOP DETECTED! Count:', reloadCount);
-			console.error('🛑 Possible causes: Hot code push, auto-deploy, or connection issues');
+		const reloadCount = parseInt(window.sessionStorage.getItem('reload_count') || '0') + 1;
+		window.sessionStorage.setItem('reload_count', reloadCount.toString());
+
+		// Only log if there's a potential issue
+		if (reloadCount > 10) {
+			console.warn('Excessive reloads detected:', reloadCount);
 		}
-		
-		// Track hot code push
-		if (Package && Package['hot-code-push']) {
-			console.log('🔥 Hot code push package detected');
-		}
-		
-		// Track autoupdate  
-		if (Package && Package.autoupdate) {
-			console.log('🔄 Autoupdate package detected');
-		}
-		
-		// Track websocket connection
-		if (Meteor.connection) {
-			console.log('🌐 Meteor connection status:', Meteor.connection.status());
-		}
-		
-		// Clear reload count after 30 seconds of stability
+
+		// Reset counter after stability
 		setTimeout(() => {
-			sessionStorage.setItem('reload_count', '0');
-		}, 30000);
+			window.sessionStorage.setItem('reload_count', '0');
+		}, 60000);
 	}
 
 	// Mark as loaded once we have data or the subscription is ready

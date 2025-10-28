@@ -37,6 +37,5 @@ Meteor.startup(() => {
 		console.warn('⚠️ Google Gemini API key not configured - using Tesseract fallback');
 	}
 
-	// Production debugging for reload issues
-	console.log('🚀 Server started at:', new Date().toISOString());
+	// Server started - production ready
 });
