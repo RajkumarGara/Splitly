@@ -99,10 +99,14 @@ Template.MainLayout.onRendered(function () {
 	this.autorun(() => {
 		const flag = localStorage.getItem('flag_indexedDbSync');
 		const enabled = flag === null ? config.features?.indexedDbSync : flag === 'true';
-		if (this.subHandle.ready() && enabled) {
-			const allBills = Bills.find({}).fetch();
-			if (allBills.length > 0) {
-				cacheBills(allBills).catch(err => console.error('IndexedDB cache error:', err));
+		if (this.subHandle.ready() && enabled && Bills) {
+			try {
+				const allBills = Bills.find({}).fetch();
+				if (allBills.length > 0) {
+					cacheBills(allBills).catch(err => console.error('IndexedDB cache error:', err));
+				}
+			} catch (error) {
+				console.warn('Bills collection not ready for caching:', error.message);
 			}
 		}
 	});
@@ -113,26 +117,28 @@ const initialLoadState = new ReactiveVar(false);
 Template.MainLayout.onCreated(function () {
 	this.subHandle = this.subscribe('bills.all');
 
-	// Monitor for excessive reloads in production (minimal logging)
-	if (window.location.hostname !== 'localhost') {
-		const reloadCount = parseInt(window.sessionStorage.getItem('reload_count') || '0') + 1;
-		window.sessionStorage.setItem('reload_count', reloadCount.toString());
+	// NOTE: Removed problematic reload detection that was triggering on normal navigation
+	// The original infinite reload issue was resolved by PWA cache optimizations
 
-		// Only log if there's a potential issue
-		if (reloadCount > 10) {
-			console.warn('Excessive reloads detected:', reloadCount);
-		}
-
-		// Reset counter after stability
-		setTimeout(() => {
-			window.sessionStorage.setItem('reload_count', '0');
-		}, 60000);
+	// Clean up any existing reload tracking data
+	if (typeof window !== 'undefined' && !window.__splitlyCleanupDone) {
+		window.__splitlyCleanupDone = true;
+		window.sessionStorage.removeItem('reload_count');
+		window.sessionStorage.removeItem('last_load_time');
+		window.sessionStorage.removeItem('disable_auto_navigation');
 	}
 
 	// Mark as loaded once we have data or the subscription is ready
 	this.autorun(() => {
-		if (this.subHandle.ready() || Bills.find({}).count() > 0) {
-			initialLoadState.set(true);
+		try {
+			if (this.subHandle.ready() || (Bills && Bills.find({}).count() > 0)) {
+				initialLoadState.set(true);
+			}
+		} catch (_error) {
+			// Collection not ready yet, wait for subscription
+			if (this.subHandle.ready()) {
+				initialLoadState.set(true);
+			}
 		}
 	});
 

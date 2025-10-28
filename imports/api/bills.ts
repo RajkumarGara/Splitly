@@ -326,6 +326,11 @@ Meteor.methods({
 		check(billId, String);
 		check(imageData, String);
 
+		// This method should only run on the server
+		if (Meteor.isClient) {
+			return 0; // Client simulation - return 0 items
+		}
+
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) {
 			throw new Meteor.Error('not-found', 'Bill not found');
@@ -378,6 +383,11 @@ Meteor.methods({
 	async 'ocr.extract'(billId: string, text: string) {
 		check(billId, String);
 		check(text, String);
+
+		// This method should only run on the server
+		if (Meteor.isClient) {
+			return 0; // Client simulation - return 0 items
+		}
 
 		if (!text.trim()) {
 			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
