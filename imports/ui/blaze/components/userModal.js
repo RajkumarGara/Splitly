@@ -14,10 +14,19 @@ Template.UserModal.onCreated(function () {
 
 Template.UserModal.helpers({
 	users() {
-		return GlobalUsers.find({}, { sort: { createdAt: 1 } }).fetch();
+		try {
+			if (!GlobalUsers) {return [];}
+			return GlobalUsers.find({}, { sort: { createdAt: 1 } }).fetch();
+		} catch (_error) {
+			return [];
+		}
 	},
 	hasUsers() {
-		return GlobalUsers.find().count() > 0;
+		try {
+			return GlobalUsers && GlobalUsers.find().count() > 0;
+		} catch (_error) {
+			return false;
+		}
 	},
 	isEditing(userId) {
 		return Template.instance().editingUserId.get() === userId;

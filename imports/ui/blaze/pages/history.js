@@ -15,14 +15,23 @@ Template.History.onCreated(function () {
 
 Template.History.helpers({
 	bills() {
-		return Bills.find({}, { sort: { createdAt: -1 } }).fetch().map(b => {
-			// Use receipt date if available, otherwise fall back to scan date
-			const dateToShow = b.date ? b.date : b.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' + b.createdAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-			return { _id: b._id, storeName: b.storeName || 'Receipt', createdAt: dateToShow, total: computeExpenseSummary(b).grandTotal.toFixed(2), itemCount: b.items?.length || 0, users: b.users.map(u => u.name).join(', ') };
-		});
+		try {
+			if (!Bills) {return [];}
+			return Bills.find({}, { sort: { createdAt: -1 } }).fetch().map(b => {
+				// Use receipt date if available, otherwise fall back to scan date
+				const dateToShow = b.date ? b.date : b.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' + b.createdAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+				return { _id: b._id, storeName: b.storeName || 'Receipt', createdAt: dateToShow, total: computeExpenseSummary(b).grandTotal.toFixed(2), itemCount: b.items?.length || 0, users: b.users.map(u => u.name).join(', ') };
+			});
+		} catch (_error) {
+			return [];
+		}
 	},
 	hasBills() {
-		return Bills.find().count() > 0;
+		try {
+			return Bills && Bills.find().count() > 0;
+		} catch (_error) {
+			return false;
+		}
 	},
 	showHelpInfo() {
 		return Template.instance().showHelpInfo.get();

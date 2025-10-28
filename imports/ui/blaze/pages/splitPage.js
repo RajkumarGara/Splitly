@@ -35,7 +35,12 @@ Template.SplitPage.helpers({
 		return !Template.instance().subscriptionsReady.get();
 	},
 	bill() {
-		return Bills.findOne(Template.instance().billId);
+		try {
+			if (!Bills) {return null;}
+			return Bills.findOne(Template.instance().billId);
+		} catch (_error) {
+			return null;
+		}
 	},
 	showHelpInfo() {
 		return Template.instance().showHelpInfo.get();

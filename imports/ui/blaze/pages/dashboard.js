@@ -107,19 +107,28 @@ Template.Dashboard.helpers({
 		return Template.instance().showInstallPrompt.get();
 	},
 	hasRecentBills() {
-		return Bills.find().count() > 0;
+		try {
+			return Bills && Bills.find().count() > 0;
+		} catch (_error) {
+			return false;
+		}
 	},
 	recentBills() {
-		return Bills.find({}, { sort: { createdAt: -1 }, limit: 1 })
-			.fetch()
-			.map(b => ({
-				_id: b._id,
-				createdAt: b.date || b.createdAt.toLocaleString(),
-				total: computeExpenseSummary(b).grandTotal.toFixed(2),
-				itemCount: b.items?.length || 0,
-				userCount: b.users?.length || 0,
-				storeName: b.storeName,
-			}));
+		try {
+			if (!Bills) {return [];}
+			return Bills.find({}, { sort: { createdAt: -1 }, limit: 1 })
+				.fetch()
+				.map(b => ({
+					_id: b._id,
+					createdAt: b.date || b.createdAt.toLocaleString(),
+					total: computeExpenseSummary(b).grandTotal.toFixed(2),
+					itemCount: b.items?.length || 0,
+					userCount: b.users?.length || 0,
+					storeName: b.storeName,
+				}));
+		} catch (_error) {
+			return [];
+		}
 	},
 	ocrProcessing() {
 		return Template.instance().ocrProcessing.get();
