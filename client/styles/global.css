@@ -1,5 +1,41 @@
 /* Global Styles for Splitly App */
 
+/* ===== Performance Optimizations ===== */
+* {
+	/* Improve font rendering */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	/* Better text rendering */
+	text-rendering: optimizeLegibility;
+}
+
+/* ===== Base HTML/Body Styles ===== */
+html {
+	/* Prevent layout shift when scrollbar appears/disappears */
+	overflow-y: scroll;
+	/* Modern browsers: reserve space for scrollbar without always showing it */
+	scrollbar-gutter: stable;
+}
+
+body {
+	/* Ensure smooth scrolling */
+	scroll-behavior: smooth;
+	/* Prevent horizontal scrolling */
+	overflow-x: hidden;
+	/* Improve rendering performance */
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Prevent layout shift when modal opens */
+body.modal-open {
+	overflow: hidden;
+	padding-right: 0 !important;
+}
+
+body.modal-open .top-nav {
+	padding-right: 0 !important;
+}
+
 /* ===== Theme Colors ===== */
 :root {
 	--purple-primary: #6366f1;
@@ -538,6 +574,197 @@
 	padding: 0.75rem 0 1.5rem 0;
 }
 
+/* ================= Top Navigation (Desktop / Tablet) ================= */
+.top-nav {
+	position: sticky;
+	top: 0;
+	z-index: 1020;
+	background: rgba(255, 255, 255, 0.98);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	display: none; /* hidden on mobile by default */
+}
+
+[data-bs-theme="dark"] .top-nav {
+	background: #0d1117;
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.top-nav-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 60px;
+}
+
+.top-nav-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	gap: 3.25rem;
+	align-items: center;
+}
+
+.top-nav-item {
+	display: flex;
+	align-items: center;
+}
+
+.top-nav-link {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.625rem 1.25rem;
+	border-radius: 12px;
+	font-weight: 500;
+	color: #4a5568;
+	text-decoration: none;
+	font-size: 0.9375rem;
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	white-space: nowrap;
+}
+
+.top-nav-link i {
+	font-size: 1.125rem;
+	line-height: 1;
+	transition: transform 0.25s ease;
+}
+
+.top-nav-link:hover {
+	background: rgba(99, 102, 241, 0.08);
+	color: var(--purple-primary);
+	text-decoration: none;
+	transform: translateY(-1px);
+}
+
+.top-nav-link:hover i {
+	transform: scale(1.1);
+}
+
+.top-nav-link:focus {
+	background: rgba(99, 102, 241, 0.08);
+	color: var(--purple-primary);
+	text-decoration: none;
+	outline: 2px solid rgba(99, 102, 241, 0.3);
+	outline-offset: 2px;
+}
+
+.top-nav-item.active .top-nav-link {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+	color: var(--purple-primary);
+	font-weight: 600;
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.top-nav-item.active .top-nav-link::after {
+	content: '';
+	position: absolute;
+	bottom: -1px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 80%;
+	height: 3px;
+	background: linear-gradient(90deg, transparent, var(--purple-primary), transparent);
+	border-radius: 2px 2px 0 0;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .top-nav-link {
+	color: #cbd5e0;
+}
+
+[data-bs-theme="dark"] .top-nav-link:hover {
+	color: var(--purple-light);
+	background: rgba(167, 139, 250, 0.12);
+}
+
+[data-bs-theme="dark"] .top-nav-link:focus {
+	outline-color: rgba(167, 139, 250, 0.4);
+}
+
+[data-bs-theme="dark"] .top-nav-item.active .top-nav-link {
+	color: var(--purple-light);
+	background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+	box-shadow: 0 2px 8px rgba(167, 139, 250, 0.2);
+}
+
+[data-bs-theme="dark"] .top-nav-item.active .top-nav-link::after {
+	background: linear-gradient(90deg, transparent, var(--purple-light), transparent);
+}
+
+/* Show top nav and hide bottom nav from 768px upward */
+@media (min-width: 768px) {
+	.top-nav { display: block; }
+	.mobile-nav { display: none; }
+	body { padding-bottom: 0; }
+	
+	.top-nav-inner {
+		padding: 0 1.5rem;
+	}
+	
+	.top-nav-link {
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+	}
+	
+	.top-nav-list {
+		gap: 0.75rem;
+	}
+}
+
+/* Medium laptops and up */
+@media (min-width: 992px) {
+	.top-nav-inner {
+		padding: 0 2rem;
+		max-width: 1140px;
+	}
+	
+	.top-nav-link {
+		padding: 0.625rem 1.25rem;
+		font-size: 0.9375rem;
+	}
+	
+	.top-nav-list {
+		gap: 3.25rem;
+	}
+}
+
+/* Large laptops and desktops */
+@media (min-width: 1200px) {
+	.top-nav-inner {
+		max-width: 1200px;
+		padding: 0 2.5rem;
+	}
+	
+	.top-nav-link {
+		padding: 0.75rem 1.5rem;
+		font-size: 0.9375rem;
+	}
+	
+	.top-nav-list {
+		gap: 3.25rem;
+	}
+}
+
+/* Extra large screens */
+@media (min-width: 1400px) {
+	.top-nav-inner {
+		max-width: 1320px;
+	}
+	
+	.top-nav-list {
+		gap: 3.25rem;
+	}
+}
+
 [data-bs-theme="dark"] .mobile-nav {
 	background: rgba(13, 17, 23, 0.95);
 	border-top-color: rgba(255, 255, 255, 0.1);
@@ -767,3 +994,4 @@ h1, h2 {
 .mobile-nav {
 	z-index: 1080 !important;
 }
+

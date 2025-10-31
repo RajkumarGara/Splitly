@@ -32,12 +32,7 @@ A simple, offline-friendly expense splitting app built with Meteor, Blaze, and B
 - **Routing:** Flow Router Extra
 
 ### **OCR (Optical Character Recognition)**
-- **Primary:** Google Gemini 2.5 Flash AI
-  - 🎯 95%+ accuracy
-  - ⚡ 4-15 second processing
-  - 📊 1,500 requests/day (free tier)
-  - 🔄 Resets every 24 hours UTC
-- **Fallback:** Tesseract.js
+- **Primary:** Gemini 2.5 Flash (fast, accurate, handles discounts)
   - 📝 Client-side OCR
   - 🔄 Automatic fallback when Gemini unavailable
   - ⏱️ 10-30 second processing
@@ -86,7 +81,6 @@ imports/
     bills.ts           # Bill management methods
     users.ts           # User management
   ui/blaze/            # Blaze templates and components
-  services/ocr/        # Tesseract.js OCR service
   infra/               # IndexedDB and infrastructure
   startup/             # App initialization
 config/                 # Configuration files
@@ -159,6 +153,5 @@ This project is open source and available under the MIT License.
 ## 🙏 Acknowledgments
 
 - Google Gemini AI for intelligent receipt processing
-- Tesseract.js for offline OCR capabilities
 - Meteor community for the excellent framework
 - Bootstrap team for the beautiful UI components

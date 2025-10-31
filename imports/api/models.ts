@@ -97,37 +97,64 @@ export interface ExpenseSummary {
  * @returns Expense summary with per-user amounts
  */
 export function computeExpenseSummary(bill: BillDoc): ExpenseSummary {
+	// Validate input
+	if (!bill || !bill.items) {
+		return {
+			billId: bill?._id || 'unknown',
+			grandTotal: 0,
+			perUser: [],
+		};
+	}
+
 	const perUserMap = new Map<string, number>();
 	let grandTotal = 0;
+
 	bill.items.forEach(item => {
+		// Validate item
+		if (!item || typeof item.price !== 'number' || item.price < 0) {
+			return; // Skip invalid items
+		}
+
 		grandTotal += item.price;
-		if (item.splitType === 'percent' && item.shares) {
-			const percentShares = item.shares.filter(s => s.type === 'percent');
-			const sumPercent = percentShares.reduce((a, b) => a + b.value, 0) || 100;
+
+		if (item.splitType === 'percent' && item.shares && Array.isArray(item.shares)) {
+			const percentShares = item.shares.filter(s => s && s.type === 'percent');
+			const sumPercent = percentShares.reduce((a, b) => a + (b.value || 0), 0) || 100;
 			const scale = 100 / sumPercent;
 			percentShares.forEach(s => {
-				const amt = item.price * (s.value * scale / 100);
-				perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + amt);
+				if (s.userId) {
+					const amt = item.price * ((s.value || 0) * scale / 100);
+					perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + amt);
+				}
 			});
-		} else if (item.splitType === 'fixed' && item.shares) {
-			const fixedShares = item.shares.filter(s => s.type === 'fixed');
+		} else if (item.splitType === 'fixed' && item.shares && Array.isArray(item.shares)) {
+			const fixedShares = item.shares.filter(s => s && s.type === 'fixed');
 			let allocated = 0;
 			fixedShares.forEach(s => {
-				allocated += s.value;
-				perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + s.value);
+				if (s.userId && typeof s.value === 'number') {
+					allocated += s.value;
+					perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + s.value);
+				}
 			});
 			const remainder = Math.max(0, item.price - allocated);
 			if (remainder > 0 && fixedShares.length) {
 				const extra = remainder / fixedShares.length;
 				fixedShares.forEach(s => {
-					perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + extra);
+					if (s.userId) {
+						perUserMap.set(s.userId, (perUserMap.get(s.userId) || 0) + extra);
+					}
 				});
 			}
-		} else if (item.userIds.length) {
+		} else if (item.userIds && Array.isArray(item.userIds) && item.userIds.length) {
 			const share = item.price / item.userIds.length;
-			item.userIds.forEach(uid => perUserMap.set(uid, (perUserMap.get(uid) || 0) + share));
+			item.userIds.forEach(uid => {
+				if (uid) {
+					perUserMap.set(uid, (perUserMap.get(uid) || 0) + share);
+				}
+			});
 		}
 	});
+
 	return {
 		billId: bill._id || 'local',
 		grandTotal: Number(grandTotal.toFixed(2)),

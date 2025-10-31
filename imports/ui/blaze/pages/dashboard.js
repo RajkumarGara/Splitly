@@ -10,9 +10,6 @@ import './dashboard.html';
 import '/client/styles/dashboard.css';
 import { pushAlert } from '../layout';
 
-// Import OCR service
-import { ocrService } from '/imports/services/ocr/ocrService.js';
-
 /**
  * Compress and resize image for faster OCR processing
  * @param {string} imageDataUrl - Original image data URL
@@ -21,12 +18,28 @@ import { ocrService } from '/imports/services/ocr/ocrService.js';
  * @returns {Promise<string>} - Compressed image data URL
  */
 async function compressImage(imageDataUrl, maxWidth = 1600, quality = 0.85) {
+	// Validate inputs
+	if (!imageDataUrl || typeof imageDataUrl !== 'string') {
+		throw new Error('Invalid image data URL');
+	}
+	if (maxWidth <= 0 || maxWidth > 10000) {
+		throw new Error('Invalid max width');
+	}
+	if (quality <= 0 || quality > 1) {
+		throw new Error('Invalid quality value');
+	}
+
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		img.onload = () => {
 			// Calculate new dimensions
 			let width = img.width;
 			let height = img.height;
+
+			if (width <= 0 || height <= 0) {
+				reject(new Error('Invalid image dimensions'));
+				return;
+			}
 
 			if (width > maxWidth) {
 				height = (height * maxWidth) / width;
@@ -38,12 +51,20 @@ async function compressImage(imageDataUrl, maxWidth = 1600, quality = 0.85) {
 			canvas.width = width;
 			canvas.height = height;
 			const ctx = canvas.getContext('2d');
+			if (!ctx) {
+				reject(new Error('Could not get canvas context'));
+				return;
+			}
 			ctx.drawImage(img, 0, 0, width, height);
 
 			// Convert to compressed JPEG
-			resolve(canvas.toDataURL('image/jpeg', quality));
+			try {
+				resolve(canvas.toDataURL('image/jpeg', quality));
+			} catch (_err) {
+				reject(new Error('Failed to convert image'));
+			}
 		};
-		img.onerror = reject;
+		img.onerror = () => reject(new Error('Failed to load image'));
 		img.src = imageDataUrl;
 	});
 }
@@ -242,7 +263,7 @@ async function handleFileUpload(e, tpl) {
 	tpl.ocrProgress.set(0);
 	tpl.ocrStatus.set('Loading image...');
 	tpl.actionLock = true;
-	pushAlert('info', 'Scanning receipt...');
+	pushAlert('info', 'Scanning receipt with AI...');
 
 	try {
 		// Convert file to data URL
@@ -261,164 +282,81 @@ async function handleFileUpload(e, tpl) {
 		imageData = await compressImage(imageData, 1600, 0.85);
 		tpl.ocrProgress.set(15);
 
-		// Run OCR with progress tracking
+		// Create bill first
 		tpl.ocrProgress.set(20);
 		tpl.ocrStatus.set('Creating bill...');
 
-		// Try Gemini AI first (faster and more accurate)
-		try {
-			const globalUsers = GlobalUsers.find().fetch();
-			const billId = await Meteor.callAsync('bills.insert', {
-				createdAt: new Date(),
-				users: globalUsers.map(u => ({ id: u._id, name: u.name })),
-				items: [],
-			});
-
-			tpl.ocrProgress.set(30);
-			tpl.ocrStatus.set('🤖 Analyzing receipt with AI...');
-
-			// Simulate progress during Gemini processing (it doesn't provide progress callbacks)
-			const progressInterval = window.setInterval(() => {
-				const current = tpl.ocrProgress.get();
-				if (current < 85) {
-					tpl.ocrProgress.set(current + 15);
-					// Update status messages during processing
-					if (current < 45) {
-						tpl.ocrStatus.set('🤖 AI reading receipt...');
-					} else if (current < 70) {
-						tpl.ocrStatus.set('📊 Extracting items...');
-					} else {
-						tpl.ocrStatus.set('💰 Calculating totals...');
-					}
-				}
-			}, 800); // Update every 0.8 seconds for smoother progress
-
-			try {
-				// Try Gemini extraction
-				const count = await Meteor.callAsync('ocr.extractFromImage', billId, imageData);
-
-				// Clear progress interval
-				window.clearInterval(progressInterval);
-
-				tpl.ocrProgress.set(100);
-				tpl.ocrStatus.set('✅ Receipt processed!');
-				tpl.ocrProcessing.set(false);
-				tpl.ocrProgress.set(0);
-				tpl.actionLock = false;
-
-				if (count > 0) {
-					pushAlert('success', `✨ AI found ${count} item${count > 1 ? 's' : ''}!`);
-				} else {
-					pushAlert('warning', 'No items detected. Please add items manually.');
-				}
-
-				// Guide user to add people if none exist
-				if (globalUsers.length === 0) {
-					setTimeout(() => {
-						pushAlert('info', 'Add people to split the bill with them!');
-					}, 1000);
-				}
-
-				FlowRouter.go(`/split/${billId}`);
-				e.target.value = '';
-				return;
-			} catch (_geminiError) {
-				// Clear progress interval on error
-				window.clearInterval(progressInterval);
-				// Gemini not available, falling back to Tesseract
-				tpl.ocrProgress.set(20);
-				tpl.ocrStatus.set('⚠️ Switching to backup OCR...');
-			}
-		} catch (_outerError) {
-			tpl.ocrProcessing.set(false);
-			tpl.ocrProgress.set(0);
-			tpl.ocrStatus.set('');
-			tpl.actionLock = false;
-			pushAlert('error', 'Failed to create bill. Please try again.');
-			e.target.value = '';
-			return;
-		}
-
-		// Fallback: Use Tesseract
-		tpl.ocrStatus.set('📝 Reading receipt text...');
-		const result = await ocrService.recognizeText(imageData, (progress) => {
-			const currentProgress = tpl.ocrProgress.get();
-			if (progress > currentProgress) {
-				tpl.ocrProgress.set(progress);
-				// Update status based on progress
-				if (progress < 30) {
-					tpl.ocrStatus.set('📝 Scanning receipt...');
-				} else if (progress < 60) {
-					tpl.ocrStatus.set('🔍 Recognizing text...');
-				} else {
-					tpl.ocrStatus.set('📊 Extracting items...');
-				}
-			}
+		const globalUsers = GlobalUsers.find().fetch();
+		const billId = await Meteor.callAsync('bills.insert', {
+			createdAt: new Date(),
+			users: globalUsers.map(u => ({ id: u._id, name: u.name })),
+			items: [],
 		});
 
-		if (!result.success) {
-			tpl.ocrProcessing.set(false);
-			tpl.ocrProgress.set(0);
-			tpl.ocrStatus.set('');
-			tpl.actionLock = false;
-			pushAlert('error', 'Could not read receipt clearly. Please try:\n• Better lighting\n• Clearer photo\n• Or enter items manually');
-			e.target.value = '';
-			return;
-		}
+		tpl.ocrProgress.set(30);
+		tpl.ocrStatus.set('🤖 Analyzing receipt with AI...');
+
+		// Simulate progress during Gemini processing
+		const progressInterval = window.setInterval(() => {
+			const current = tpl.ocrProgress.get();
+			if (current < 85) {
+				tpl.ocrProgress.set(current + 15);
+				// Update status messages during processing
+				if (current < 45) {
+					tpl.ocrStatus.set('🤖 AI reading receipt...');
+				} else if (current < 70) {
+					tpl.ocrStatus.set('📊 Extracting items...');
+				} else {
+					tpl.ocrStatus.set('💰 Calculating totals...');
+				}
+			}
+		}, 800);
 
 		try {
-			// Create bill
-			if (tpl.ocrProgress.get() < 75) {
-				tpl.ocrProgress.set(75);
+			// Extract with Gemini AI
+			const count = await Meteor.callAsync('ocr.extractFromImage', billId, imageData);
+
+			// Clear progress interval
+			window.clearInterval(progressInterval);
+
+			tpl.ocrProgress.set(100);
+			tpl.ocrStatus.set('✅ Receipt processed!');
+			tpl.ocrProcessing.set(false);
+			tpl.ocrProgress.set(0);
+			tpl.actionLock = false;
+
+			if (count > 0) {
+				pushAlert('success', `✨ AI found ${count} item${count > 1 ? 's' : ''}!`);
+			} else {
+				pushAlert('warning', 'No items detected. Please add items manually.');
 			}
-			tpl.ocrStatus.set('💾 Saving data...');
 
-			const globalUsers = GlobalUsers.find().fetch();
-			const billId = await Meteor.callAsync('bills.insert', {
-				createdAt: new Date(),
-				users: globalUsers.map(u => ({ id: u._id, name: u.name })),
-				items: [],
-			});
-
-			try {
-				tpl.ocrProgress.set(85);
-				tpl.ocrStatus.set('🛒 Extracting items...');
-				const count = await Meteor.callAsync('ocr.extract', billId, result.text);
-
-				tpl.ocrProgress.set(100);
-				tpl.ocrStatus.set('✅ Receipt processed!');
-				tpl.ocrProcessing.set(false);
-				tpl.ocrProgress.set(0);
-				tpl.actionLock = false;
-
-				if (count > 0) {
-					pushAlert('success', `Found ${count} item${count > 1 ? 's' : ''}!`);
-				} else {
-					pushAlert('warning', 'No items detected. Please add items manually.');
-				}
-
-				// Guide user to add people if none exist
-				const finalGlobalUsers = GlobalUsers.find().fetch();
-				if (finalGlobalUsers.length === 0) {
-					setTimeout(() => {
-						pushAlert('info', 'Add people to split the bill with them!');
-					}, 1000);
-				}
-
-				FlowRouter.go(`/split/${billId}`);
-			} catch (_err2) {
-				tpl.ocrProcessing.set(false);
-				tpl.ocrProgress.set(0);
-				tpl.ocrStatus.set('');
-				tpl.actionLock = false;
-				pushAlert('error', 'Error extracting items. Please try again or add manually.');
+			// Guide user to add people if none exist
+			if (globalUsers.length === 0) {
+				setTimeout(() => {
+					pushAlert('info', 'Add people to split the bill with them!');
+				}, 1000);
 			}
-		} catch (_err) {
+
+			FlowRouter.go(`/split/${billId}`);
+			e.target.value = '';
+			return;
+		} catch (err) {
+			// Clear progress interval on error
+			window.clearInterval(progressInterval);
 			tpl.ocrProcessing.set(false);
 			tpl.ocrProgress.set(0);
 			tpl.ocrStatus.set('');
 			tpl.actionLock = false;
-			pushAlert('error', 'Failed to create bill. Please try again.');
+
+			const errorMsg = err.reason || err.message || 'Failed to process receipt';
+			if (errorMsg.includes('API key not configured') || errorMsg.includes('Gemini')) {
+				pushAlert('error', '⚠️ Gemini AI not configured. Please set up your API key.');
+			} else {
+				pushAlert('error', `Failed to process receipt: ${errorMsg}`);
+			}
+			e.target.value = '';
+			return;
 		}
 	} catch (_err) {
 		tpl.ocrProcessing.set(false);

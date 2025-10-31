@@ -17,12 +17,12 @@ const urlsToCache = [
 
 // Install event - cache core files
 self.addEventListener('install', event => {
+	console.info('[SW] Installing service worker, version:', CACHE_VERSION);
 	event.waitUntil(
 		caches.open(CACHE_NAME)
 			.then(cache => cache.addAll(urlsToCache))
-			.then(() => self.skipWaiting())
 			.catch(error => {
-				console.error('SW Cache installation failed:', error);
+				console.error('[SW] Cache installation failed:', error);
 				throw error;
 			}),
 	);
@@ -30,12 +30,14 @@ self.addEventListener('install', event => {
 
 // Activate event - clean up old caches and take control
 self.addEventListener('activate', event => {
+	console.info('[SW] Activating service worker, version:', CACHE_VERSION);
 	event.waitUntil(
 		Promise.all([
 			// Clean up old caches
 			caches.keys().then(cacheNames => {
 				const deletionPromises = cacheNames.map(cacheName => {
 					if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+						console.info('[SW] Deleting old cache:', cacheName);
 						return caches.delete(cacheName);
 					}
 				}).filter(Boolean);
@@ -109,7 +111,22 @@ self.addEventListener('fetch', (event) => {
 
 // Handle messages from the client
 self.addEventListener('message', (event) => {
-	if (event.data && event.data.type === 'SKIP_WAITING') {
+	if (!event.data) {return;}
+
+	if (event.data.type === 'SKIP_WAITING') {
+		console.info('[SW] Received SKIP_WAITING message, activating new version');
 		self.skipWaiting();
+	}
+
+	if (event.data.type === 'GET_VERSION') {
+		// Respond back to client with current cache version
+		try {
+			if (event.source) {
+				event.source.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
+			}
+		} catch (err) {
+			// Silently ignore postMessage errors (client may have closed)
+			console.warn('[SW] Version message error:', err.message);
+		}
 	}
 });

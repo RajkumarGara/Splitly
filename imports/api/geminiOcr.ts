@@ -203,6 +203,16 @@ export async function extractReceiptWithGemini(base64Image: string): Promise<{
 		return { success: false, error: 'API key not configured' };
 	}
 
+	// Validate input
+	if (!base64Image || typeof base64Image !== 'string') {
+		return { success: false, error: 'Invalid image data' };
+	}
+
+	// Check image size (limit to 10MB base64)
+	if (base64Image.length > 14000000) { // ~10MB base64
+		return { success: false, error: 'Image too large (max 10MB)' };
+	}
+
 	try {
 		// Estimate optimal starting tokens based on image size
 		const startingTokens = estimateStartingTokens(base64Image);

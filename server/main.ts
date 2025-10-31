@@ -34,7 +34,7 @@ if (Meteor.isServer) {
 Meteor.startup(() => {
 	// API initialization - log critical config only
 	if (!process.env.GOOGLE_GEMINI_API_KEY) {
-		console.warn('⚠️ Google Gemini API key not configured - using Tesseract fallback');
+		console.warn('⚠️ Google Gemini API key not configured - receipt scanning disabled');
 	}
 
 	// Server started - production ready

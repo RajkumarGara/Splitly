@@ -21,18 +21,30 @@ function mapType(type) {
 }
 
 function pushAlert(type, msg) {
+	if (!msg || typeof msg !== 'string') {
+		console.warn('[pushAlert] Invalid message:', msg);
+		return;
+	}
 	const list = alertsVar.get();
 	list.push({ id: Math.random().toString(36).slice(2), type, msg, typeClass: mapType(type) });
 	alertsVar.set(list);
 	setTimeout(() => {
 		const cur = alertsVar.get();
-		cur.shift();
-		alertsVar.set(cur);
+		if (cur.length > 0) {
+			cur.shift();
+			alertsVar.set(cur);
+		}
 	}, 6000);
 }
 
 let confirmResolver = null;
 export function showConfirm(message, options = {}) {
+	// Validate message
+	if (!message || typeof message !== 'string') {
+		console.warn('[showConfirm] Invalid message:', message);
+		return Promise.resolve(false);
+	}
+
 	return new Promise(resolve => {
 		const modalEl = document.getElementById('confirmModal');
 		const hasBootstrap = typeof window !== 'undefined' && window.bootstrap?.Modal;
@@ -44,7 +56,11 @@ export function showConfirm(message, options = {}) {
 		const msgEl = document.getElementById('confirmModalMessage');
 		if (msgEl) {
 			// Safely handle line breaks - escape HTML to prevent XSS
-			const escapedMessage = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			const escapedMessage = message
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.substring(0, 500); // Limit message length
 			msgEl.innerHTML = escapedMessage.replace(/\n/g, '<br>');
 		}
 		const okBtn = document.getElementById('confirmOkBtn');
@@ -103,10 +119,16 @@ Template.MainLayout.onRendered(function () {
 			try {
 				const allBills = Bills.find({}).fetch();
 				if (allBills.length > 0) {
-					cacheBills(allBills).catch(err => console.error('IndexedDB cache error:', err));
+					cacheBills(allBills).catch(err => {
+						if (process.env.NODE_ENV !== 'production') {
+							console.error('[IndexedDB] Cache error:', err);
+						}
+					});
 				}
 			} catch (error) {
-				console.warn('Bills collection not ready for caching:', error.message);
+				if (process.env.NODE_ENV !== 'production') {
+					console.warn('[IndexedDB] Bills collection not ready for caching:', error.message);
+				}
 			}
 		}
 	});
@@ -123,9 +145,14 @@ Template.MainLayout.onCreated(function () {
 	// Clean up any existing reload tracking data
 	if (typeof window !== 'undefined' && !window.__splitlyCleanupDone) {
 		window.__splitlyCleanupDone = true;
-		window.sessionStorage.removeItem('reload_count');
-		window.sessionStorage.removeItem('last_load_time');
-		window.sessionStorage.removeItem('disable_auto_navigation');
+		try {
+			window.sessionStorage.removeItem('reload_count');
+			window.sessionStorage.removeItem('last_load_time');
+			window.sessionStorage.removeItem('disable_auto_navigation');
+		} catch (error) {
+			// sessionStorage may not be available (privacy mode, etc.)
+			console.warn('Could not clear sessionStorage:', error);
+		}
 	}
 
 	// Mark as loaded once we have data or the subscription is ready
@@ -153,7 +180,11 @@ Template.MainLayout.onCreated(function () {
 					initialLoadState.set(true);
 				}
 			})
-			.catch(err => console.error('IndexedDB load error:', err));
+			.catch(err => {
+				if (process.env.NODE_ENV !== 'production') {
+					console.error('[IndexedDB] Load error:', err);
+				}
+			});
 	}
 });
 
@@ -181,6 +212,15 @@ Template.MainLayout.helpers({
 		if (path === '/' && currentPath === '/') {return 'active';}
 		if (path !== '/' && currentPath.startsWith(path)) {return 'active';}
 		return '';
+	},
+	// Centralized navigation items so we can render both top (desktop) and bottom (mobile) navs
+	navItems() {
+		return [
+			{ label: 'Home', path: '/', icon: 'bi-house-door' },
+			{ label: 'History', path: '/history', icon: 'bi-clock-history' },
+			{ label: 'Analysis', path: '/analysis', icon: 'bi-graph-up' },
+			{ label: 'Settings', path: '/settings', icon: 'bi-gear' },
+		];
 	},
 	alerts() {
 		return alertsVar.get();

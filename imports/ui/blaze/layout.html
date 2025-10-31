@@ -1,5 +1,21 @@
 <template name="MainLayout">
 	{{> Alerts}}
+	<!-- Top Navigation (desktop/tablet) -->
+	<header class="top-nav" role="navigation" aria-label="Primary">
+		<nav class="top-nav-inner">
+			<ul class="top-nav-list">
+				{{#each navItems}}
+					<li class="top-nav-item {{isActive path}}">
+						<a href="{{path}}" class="top-nav-link">
+							<i class="bi {{icon}}" aria-hidden="true"></i>
+							<span class="label">{{label}}</span>
+						</a>
+					</li>
+				{{/each}}
+			</ul>
+		</nav>
+	</header>
+
 	<div class="container pb-5 pb-lg-4">
 		{{#if notReady}}
 			<div class="text-center py-5">
@@ -13,27 +29,15 @@
 		{{/if}}
 	</div>
 
-	<!-- Bottom Navigation (visible on all screen sizes) -->
-
-	<!-- Bottom Navigation (visible on all screen sizes) -->
-	<nav class="mobile-nav">
+	<!-- Bottom Navigation (mobile only) -->
+	<nav class="mobile-nav" role="navigation" aria-label="Primary (mobile)">
 		<div class="mobile-nav-container">
-			<a href="/" class="mobile-nav-item {{isActive '/'}}">
-				<i class="bi bi-house-door"></i>
-				<span>Home</span>
-			</a>
-			<a href="/history" class="mobile-nav-item {{isActive '/history'}}">
-				<i class="bi bi-clock-history"></i>
-				<span>History</span>
-			</a>
-			<a href="/analysis" class="mobile-nav-item {{isActive '/analysis'}}">
-				<i class="bi bi-graph-up"></i>
-				<span>Analysis</span>
-			</a>
-			<a href="/settings" class="mobile-nav-item {{isActive '/settings'}}">
-				<i class="bi bi-gear"></i>
-				<span>Settings</span>
-			</a>
+			{{#each navItems}}
+				<a href="{{path}}" class="mobile-nav-item {{isActive path}}" aria-label="{{label}}">
+					<i class="bi {{icon}}" aria-hidden="true"></i>
+					<span>{{label}}</span>
+				</a>
+			{{/each}}
 		</div>
 	</nav>
 

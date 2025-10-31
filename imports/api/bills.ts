@@ -2,8 +2,6 @@ import { Mongo } from 'meteor/mongo';
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
 import type { BillDoc, UserProfile, Item } from './models';
-import { parseReceiptText } from './receiptParsers';
-import { detectStoreName, extractDateFromLines } from './receiptUtils';
 import { extractReceiptWithGemini, isGeminiAvailable } from './geminiOcr';
 
 /**
@@ -54,8 +52,9 @@ Meteor.methods({
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
 
-		// Check for duplicate user name
-		if (existing.users.some((u: UserProfile) => u.name.trim() === user.name.trim())) {
+		// Check for duplicate user name (case-insensitive)
+		const normalizedName = user.name.trim().toLowerCase();
+		if (existing.users.some((u: UserProfile) => u.name.trim().toLowerCase() === normalizedName)) {
 			throw new Meteor.Error('duplicate-user', 'User name already exists');
 		}
 
@@ -119,10 +118,13 @@ Meteor.methods({
 
 		// Validate item data
 		if (!item.name?.trim()) {
-			throw new Meteor.Error('invalid-item', 'Item name required');
+			throw new Meteor.Error('invalid-item', 'Item name is required');
 		}
-		if (typeof item.price !== 'number' || item.price <= 0) {
-			throw new Meteor.Error('invalid-price', 'Item price must be > 0');
+		if (typeof item.price !== 'number' || item.price < 0) {
+			throw new Meteor.Error('invalid-price', 'Item price must be a non-negative number');
+		}
+		if (item.price === 0) {
+			throw new Meteor.Error('invalid-price', 'Item price must be greater than zero');
 		}
 
 		const existing = await Bills.findOneAsync(billId);
@@ -130,10 +132,10 @@ Meteor.methods({
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
 
-		// Sanitize item name
+		// Sanitize item name and price
 		const sanitizedItem = {
 			...item,
-			name: item.name.trim(),
+			name: item.name.trim().substring(0, 100), // Limit name length
 			price: Number(item.price.toFixed(2)),
 		};
 
@@ -312,12 +314,11 @@ Meteor.methods({
 
 /**
  * OCR text extraction methods
- * Extract items, prices, and totals from receipt text
+ * Extract items, prices, and totals from receipt images using Gemini AI
  */
 Meteor.methods({
 	/**
 	 * Extract items from receipt image using Gemini AI
-	 * Falls back to text-based extraction if Gemini fails
 	 * @param billId - ID of the bill to add items to
 	 * @param imageData - Base64 encoded image data
 	 * @returns {Promise<number>} - Number of items extracted
@@ -336,89 +337,44 @@ Meteor.methods({
 			throw new Meteor.Error('not-found', 'Bill not found');
 		}
 
-		// Try Gemini AI first if available
-		if (isGeminiAvailable()) {
-			const geminiResult = await extractReceiptWithGemini(imageData);
-
-			if (geminiResult.success && geminiResult.items && geminiResult.items.length > 0) {
-				const userIds = existing.users.map((u: UserProfile) => u.id);
-
-				// Convert Gemini items to our Item format
-				const items: Item[] = geminiResult.items.map((item, idx) => ({
-					id: `gemini${Date.now()}_${idx}`,
-					name: item.name,
-					price: Number(item.price.toFixed(2)),
-					userIds,
-					splitType: 'equal' as const,
-				}));
-
-				const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
-				const taxAmount = geminiResult.tax || 0;
-				const calculatedTotal = calculatedItemsTotal + taxAmount;
-
-				await persistParsedReceipt(
-					billId,
-					items,
-					geminiResult.subtotal || calculatedItemsTotal,
-					taxAmount,
-					geminiResult.total || calculatedTotal,
-					geminiResult.store || 'Receipt',
-					geminiResult.date || null,
-				);
-
-				return items.length;
-			}
+		// Use Gemini AI for extraction
+		if (!isGeminiAvailable()) {
+			throw new Meteor.Error('gemini-unavailable', 'Gemini AI not configured. Please set GOOGLE_GEMINI_API_KEY.');
 		}
 
-		// Fallback: caller should use 'ocr.extract' with Tesseract text
-		throw new Meteor.Error('gemini-unavailable', 'Gemini AI not available or extraction failed. Please use Tesseract fallback.');
-	},
+		const geminiResult = await extractReceiptWithGemini(imageData);
 
-	/**
-	 * Extract items and totals from OCR text
-	 * @param billId - ID of the bill to add items to
-	 * @param text - OCR extracted text from receipt
-	 * @returns {Promise<number>} - Number of items extracted
-	 */
-	async 'ocr.extract'(billId: string, text: string) {
-		check(billId, String);
-		check(text, String);
-
-		// This method should only run on the server
-		if (Meteor.isClient) {
-			return 0; // Client simulation - return 0 items
+		if (!geminiResult.success) {
+			throw new Meteor.Error('extraction-failed', geminiResult.error || 'Failed to extract receipt data');
 		}
 
-		if (!text.trim()) {
-			throw new Meteor.Error('invalid-text', 'Receipt text cannot be empty');
-		}
-
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
-
-		const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
-		const storeName = detectStoreName(text);
-		const receiptDate = extractDateFromLines(lines);
-
-		const { items, receiptTotal, taxAmount, totalAmount } = parseReceiptText(
-			text,
-			existing.users.map((u: UserProfile) => u.id),
-		);
-
-		if (!items.length) {
+		if (!geminiResult.items || geminiResult.items.length === 0) {
 			return 0;
 		}
+
+		const userIds = existing.users.map((u: UserProfile) => u.id);
+
+		// Convert Gemini items to our Item format
+		const items: Item[] = geminiResult.items.map((item, idx) => ({
+			id: `gemini${Date.now()}_${idx}`,
+			name: item.name,
+			price: Number(item.price.toFixed(2)),
+			userIds,
+			splitType: 'equal' as const,
+		}));
+
+		const calculatedItemsTotal = items.reduce((sum, item) => sum + item.price, 0);
+		const taxAmount = geminiResult.tax || 0;
+		const calculatedTotal = calculatedItemsTotal + taxAmount;
 
 		await persistParsedReceipt(
 			billId,
 			items,
-			receiptTotal,
+			geminiResult.subtotal || calculatedItemsTotal,
 			taxAmount,
-			totalAmount,
-			storeName,
-			receiptDate,
+			geminiResult.total || calculatedTotal,
+			geminiResult.store || 'Receipt',
+			geminiResult.date || null,
 		);
 
 		return items.length;
