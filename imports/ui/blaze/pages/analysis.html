@@ -11,28 +11,24 @@
 			<div class="row g-3 mb-4">
 				<div class="col-md-3 col-6">
 					<div class="stat-card">
-						<div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
 						<div class="stat-label">Total Spent</div>
 						<div class="stat-value">${{totalSpent}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
 					<div class="stat-card">
-						<div class="stat-icon"><i class="bi bi-cart3"></i></div>
-						<div class="stat-label">Items (no tax)</div>
+						<div class="stat-label">Items</div>
 						<div class="stat-value">${{totalItemSpent}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
 					<div class="stat-card">
-						<div class="stat-icon"><i class="bi bi-percent"></i></div>
 						<div class="stat-label">Tax Total</div>
 						<div class="stat-value">${{taxTotal}}</div>
 					</div>
 				</div>
 				<div class="col-md-3 col-6">
 					<div class="stat-card">
-						<div class="stat-icon"><i class="bi bi-receipt"></i></div>
 						<div class="stat-label">Avg / Receipt</div>
 						<div class="stat-value">${{avgPerReceipt}}</div>
 					</div>
@@ -42,10 +38,10 @@
 			<div class="analysis-section">
 				<div class="section-header">
 					<div>
-						<h5 class="section-title">
+						<h3 class="section-title">
 							<i class="bi bi-people-fill"></i>
 							Per User
-						</h5>
+						</h3>
 						<p class="section-subtitle">(tax included equally)</p>
 					</div>
 				</div>
@@ -85,10 +81,10 @@
 				<div class="col-md-6">
 					<div class="analysis-section">
 						<div class="section-header">
-							<h5 class="section-title">
+							<h3 class="section-title">
 								<i class="bi bi-calendar3"></i>
 								Monthly Trend
-							</h5>
+							</h3>
 						</div>
 						<div class="monthly-list">
 							{{#each monthlyBreakdown}}
@@ -106,10 +102,10 @@
 				<div class="col-md-6">
 					<div class="analysis-section">
 						<div class="section-header">
-							<h5 class="section-title">
+							<h3 class="section-title">
 								<i class="bi bi-shop"></i>
 								Store Breakdown
-							</h5>
+							</h3>
 						</div>
 						<div class="top-items-list">
 							{{#each storeBreakdown}}
@@ -135,10 +131,10 @@
 				<div class="col-md-6">
 					<div class="analysis-section">
 						<div class="section-header">
-							<h5 class="section-title">
+							<h3 class="section-title">
 								<i class="bi bi-cash-coin"></i>
 								Most Valuable Items
-							</h5>
+							</h3>
 						</div>
 						<div class="top-items-list">
 							{{#each mostValuable}}
@@ -157,10 +153,10 @@
 				<div class="col-md-6">
 					<div class="analysis-section">
 						<div class="section-header">
-							<h5 class="section-title">
+							<h3 class="section-title">
 								<i class="bi bi-star-fill"></i>
 								Most Purchased Items
-							</h5>
+							</h3>
 						</div>
 						<div class="top-items-list">
 							{{#each mostFrequent}}

@@ -1,6 +1,6 @@
 # Splitly
 
-A simple, offline-friendly expense splitting app built with Meteor, Blaze, and Bootstrap.
+A simple expense splitting app built with Meteor, Blaze, and Bootstrap.
 
 ## 🚀 Live Demo
 

@@ -1,4 +1,5 @@
 <head>
+	<html lang="en">
 	<title>Splitly - Split Bills & Expenses</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -9,6 +10,10 @@
 	
 	<!-- PWA Manifest -->
 	<link rel="manifest" href="/manifest.json">
+	
+	<!-- Preconnect to CDN for faster loading -->
+	<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+	<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 	
 	<!-- Theme Color -->
 	<meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)">
@@ -26,7 +31,9 @@
 	<meta name="description" content="Split bills and track expenses with friends using AI-powered receipt scanning">
 	<meta name="keywords" content="bill splitting, expense tracking, receipt scanning, split expenses, group expenses">
 	
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<!-- Load Bootstrap Icons with media attribute to defer non-critical CSS -->
+	<link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+	<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"></noscript>
 </head>
 <body>
 	<div id="app"></div>
