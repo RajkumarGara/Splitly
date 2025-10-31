@@ -221,9 +221,15 @@ export function createItem(name: string, price: number, userIds: string[]): Item
  * @returns Complete receipt data
  */
 export function finalizeReceipt(items: Item[], receiptTotal: number | null, taxAmount: number, totalAmount: number | null) {
+	// Validate inputs
+	if (!Array.isArray(items)) {
+		items = [];
+	}
+	taxAmount = Number(taxAmount) || 0;
+
 	// Calculate totals from items if not found
 	if ((!receiptTotal || !totalAmount) && items.length > 0) {
-		receiptTotal = receiptTotal || parseFloat(items.reduce((sum, item) => sum + item.price, 0).toFixed(2));
+		receiptTotal = receiptTotal || parseFloat(items.reduce((sum, item) => sum + (item.price || 0), 0).toFixed(2));
 		totalAmount = totalAmount || receiptTotal + taxAmount;
 	}
 

@@ -8,11 +8,11 @@
 			
 			<!-- Preferences Section -->
 			<div class="card shadow-sm mb-3">
-				<div class="card-header">
+				<div class="card-header bg-white">
 					<h5 class="mb-0"><i class="bi bi-sliders"></i> Preferences</h5>
 				</div>
 				<div class="card-body">
-					<div class="mb-3">
+					<div class="mb-4">
 						<label class="form-label">
 							<strong>Theme</strong>
 							<br><small class="text-muted">Choose your preferred color scheme</small>
@@ -29,7 +29,7 @@
 							</label>
 						</div>
 					</div>
-					<hr>
+
 					<div class="form-check form-switch mb-3">
 						<input class="form-check-input" type="checkbox" id="showHelpSwitch" checked="{{showHelpEnabled}}">
 						<label class="form-check-label" for="showHelpSwitch">
@@ -37,7 +37,7 @@
 							<br><small class="text-muted">Display helpful tips and instructions throughout the app</small>
 						</label>
 					</div>
-					<hr>
+
 					<div class="form-check form-switch mb-0">
 						<input class="form-check-input" type="checkbox" id="indexedSwitch" checked="{{indexedEnabled}}">
 						<label class="form-check-label" for="indexedSwitch">
@@ -46,16 +46,9 @@
 						</label>
 					</div>
 				</div>
-				<div class="card-footer">
-					<small><i class="bi bi-info-circle"></i> Settings are saved automatically</small>
+				<div class="card-footer bg-light">
+					<small class="text-muted"><i class="bi bi-info-circle"></i> Settings are saved automatically</small>
 				</div>
-			</div>
-
-			<!-- Data Management Section -->
-			<div class="mt-4 pt-3 border-top">
-				<button class="btn btn-danger" id="clearCacheBtn">
-					<i class="bi bi-trash-fill"></i> Clear All Data
-				</button>
 			</div>
 		</div>
 	</div>

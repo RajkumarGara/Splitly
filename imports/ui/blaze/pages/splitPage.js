@@ -193,24 +193,34 @@ Template.SplitPage.helpers({
 Template.SplitPage.onRendered(function() {
 	const _template = this;
 
+	// Store event handler references for cleanup
+	this.escapeHandler = function(e) {
+		if (e.key === 'Escape') {
+			// Find any open modals and close them
+			const openModals = document.querySelectorAll('.modal.show');
+			openModals.forEach(modal => {
+				const modalInstance = window.bootstrap.Modal.getInstance(modal);
+				if (modalInstance && !modal.hasAttribute('data-bs-backdrop-static')) {
+					modalInstance.hide();
+				}
+			});
+		}
+	};
+
 	// Ensure modal dismissal works properly
 	this.autorun(() => {
 		Tracker.afterFlush(() => {
 			// Add ESC key listener for modals
-			document.addEventListener('keydown', function(e) {
-				if (e.key === 'Escape') {
-					// Find any open modals and close them
-					const openModals = document.querySelectorAll('.modal.show');
-					openModals.forEach(modal => {
-						const modalInstance = window.bootstrap.Modal.getInstance(modal);
-						if (modalInstance && !modal.hasAttribute('data-bs-backdrop-static')) {
-							modalInstance.hide();
-						}
-					});
-				}
-			});
+			document.addEventListener('keydown', this.escapeHandler);
 		});
 	});
+});
+
+Template.SplitPage.onDestroyed(function() {
+	// Clean up event listeners
+	if (this.escapeHandler) {
+		document.removeEventListener('keydown', this.escapeHandler);
+	}
 });
 
 Template.SplitPage.events({

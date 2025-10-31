@@ -4,6 +4,7 @@ import './analysis.html';
 import '/client/styles/analysis.css';
 import { Bills } from '/imports/api/bills';
 import { computeExpenseSummary } from '/imports/api/models';
+import { taxPerUser } from '/imports/api/utils';
 
 // Aggregate spending analytics across all bills, optionally filtered by users
 function computeGlobalAnalytics(bills, filterUserIds = []) {
@@ -30,13 +31,13 @@ function computeGlobalAnalytics(bills, filterUserIds = []) {
 		}
 
 		const billSummary = computeExpenseSummary(bill);
-		const thisTax = Number(bill.taxAmount || 0);
-		const taxPerUser = bill.users?.length ? thisTax / bill.users.length : 0;
+		const usersCount = bill.users?.length || 0;
+		const taxPerUserAmount = taxPerUser(bill);
 
 		// Only aggregate spending for filtered users (or all users if no filter)
 		billSummary.perUser.forEach(entry => {
 			if (filterUserIds.length === 0 || filterUserIds.includes(entry.userId)) {
-				perUserMap.set(entry.userId, (perUserMap.get(entry.userId) || 0) + entry.amount + taxPerUser);
+				perUserMap.set(entry.userId, (perUserMap.get(entry.userId) || 0) + entry.amount + taxPerUserAmount);
 			}
 		});
 
@@ -73,7 +74,7 @@ function computeGlobalAnalytics(bills, filterUserIds = []) {
 
 		// Only count tax if filtering and user participated
 		if (filterUserIds.length === 0 || billItemCount > 0) {
-			billTaxTotal = taxPerUser * (filterUserIds.length || bill.users?.length || 1);
+			billTaxTotal = taxPerUserAmount * (filterUserIds.length || usersCount);
 		}
 
 		itemTotal += billItemTotal;

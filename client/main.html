@@ -1,12 +1,18 @@
 <head>
 	<title>Splitly - Split Bills & Expenses</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	
+	<!-- Security Headers (Note: X-Frame-Options must be set via server HTTP headers, not meta tags) -->
+	<meta http-equiv="X-Content-Type-Options" content="nosniff">
+	<meta name="referrer" content="strict-origin-when-cross-origin">
 	
 	<!-- PWA Manifest -->
 	<link rel="manifest" href="/manifest.json">
 	
 	<!-- Theme Color -->
-	<meta name="theme-color" content="#6366f1">
+	<meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)">
+	<meta name="theme-color" content="#5046e5" media="(prefers-color-scheme: dark)">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,6 +24,7 @@
 	
 	<!-- Description for SEO and PWA -->
 	<meta name="description" content="Split bills and track expenses with friends using AI-powered receipt scanning">
+	<meta name="keywords" content="bill splitting, expense tracking, receipt scanning, split expenses, group expenses">
 	
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>

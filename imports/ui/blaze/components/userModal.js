@@ -9,7 +9,7 @@ import { pushAlert } from '/imports/ui/blaze/layout';
 Template.UserModal.onCreated(function () {
 	this.subscribe('globalUsers.all');
 	this.editingUserId = new ReactiveVar(null);
-	this.clickLock = false; // guard rapid double submissions
+	this.operationInProgress = new ReactiveVar(false); // Track async operations
 });
 
 Template.UserModal.helpers({
@@ -35,7 +35,7 @@ Template.UserModal.helpers({
 
 Template.UserModal.events({
 	async 'click #addUserModalBtn'(e, tpl) {
-		if (tpl.clickLock) {
+		if (tpl.operationInProgress.get()) {
 			return;
 		}
 		const input = tpl.find('#userNameModalInput');
@@ -44,7 +44,7 @@ Template.UserModal.events({
 			pushAlert('error', 'Please enter a name');
 			return;
 		}
-		tpl.clickLock = true;
+		tpl.operationInProgress.set(true);
 		try {
 			await Meteor.callAsync('globalUsers.insert', { name });
 			pushAlert('success', 'Person added');
@@ -52,16 +52,22 @@ Template.UserModal.events({
 		} catch (err) {
 			pushAlert('error', err.reason || 'Could not add person');
 		} finally {
-			tpl.clickLock = false;
+			tpl.operationInProgress.set(false);
 		}
 	},
-	async 'click .remove-user'(e) {
+	async 'click .remove-user'(e, tpl) {
+		if (tpl.operationInProgress.get()) {
+			return;
+		}
 		const userId = e.currentTarget.getAttribute('data-id');
+		tpl.operationInProgress.set(true);
 		try {
 			await Meteor.callAsync('globalUsers.remove', userId);
 			pushAlert('success', 'Person removed');
 		} catch (err) {
 			pushAlert('error', err.reason || 'Could not remove person');
+		} finally {
+			tpl.operationInProgress.set(false);
 		}
 	},
 	'keypress #userNameModalInput'(e, tpl) {
@@ -82,7 +88,7 @@ Template.UserModal.events({
 		}, 100);
 	},
 	async 'click .save-edit-user'(e, tpl) {
-		if (tpl.clickLock) {
+		if (tpl.operationInProgress.get()) {
 			return;
 		}
 		const userId = e.currentTarget.getAttribute('data-id');
@@ -92,7 +98,7 @@ Template.UserModal.events({
 			pushAlert('error', 'Name cannot be empty');
 			return;
 		}
-		tpl.clickLock = true;
+		tpl.operationInProgress.set(true);
 		try {
 			await Meteor.callAsync('globalUsers.update', userId, { name: newName });
 			pushAlert('success', 'Name updated');
@@ -100,7 +106,7 @@ Template.UserModal.events({
 		} catch (err) {
 			pushAlert('error', err.reason || 'Could not update name');
 		} finally {
-			tpl.clickLock = false;
+			tpl.operationInProgress.set(false);
 		}
 	},
 	'click .cancel-edit-user'(e, tpl) {

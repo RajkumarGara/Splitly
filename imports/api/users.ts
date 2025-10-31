@@ -34,13 +34,16 @@ Meteor.methods({
 
 		// Validate user name
 		if (!user.name?.trim()) {
-			throw new Meteor.Error('invalid-name', 'User name required');
+			throw new Meteor.Error('invalid-name', 'Name is required');
 		}
 
-		// Check for duplicate name
-		const existing = await GlobalUsers.findOneAsync({ name: user.name.trim() });
+		// Check for duplicate name (case-insensitive)
+		const normalizedName = user.name.trim().toLowerCase();
+		const existing = await GlobalUsers.findOneAsync({
+			name: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
+		});
 		if (existing) {
-			throw new Meteor.Error('duplicate-name', 'User name already exists');
+			throw new Meteor.Error('duplicate-name', 'This name already exists');
 		}
 
 		// Create sanitized user document
@@ -68,14 +71,15 @@ Meteor.methods({
 			throw new Meteor.Error('not-found', 'User not found');
 		}
 
-		// Check for duplicate name if name is being updated
+		// Check for duplicate name if name is being updated (case-insensitive)
 		if (updates.name && updates.name !== existing.name) {
+			const normalizedName = updates.name.trim().toLowerCase();
 			const duplicate = await GlobalUsers.findOneAsync({
-				name: updates.name.trim(),
+				name: { $regex: new RegExp(`^${normalizedName}$`, 'i') },
 				_id: { $ne: userId },
 			});
 			if (duplicate) {
-				throw new Meteor.Error('duplicate-name', 'User name already exists');
+				throw new Meteor.Error('duplicate-name', 'This name already exists');
 			}
 		}
 
