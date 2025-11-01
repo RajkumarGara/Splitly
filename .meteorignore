@@ -1,3 +1,4 @@
 # Exclude linting and dev tooling configs from Meteor build
 eslint.config.mjs
 /.vscode/
+/scripts/
