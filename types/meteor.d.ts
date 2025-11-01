@@ -17,6 +17,27 @@ declare module 'meteor/meteor' {
 		}
 		function defer(func: () => void): void;
 		function setTimeout(func: () => void, delay: number): number;
+		const isServer: boolean;
+		const isClient: boolean;
+		interface User {
+			_id: string;
+			emails?: { address: string; verified: boolean }[];
+			profile?: any;
+			createdAt?: Date;
+		}
+		namespace users {
+			function findOneAsync(selector: any, options?: any): Promise<User | undefined>;
+			function updateAsync(selector: any, modifier: any, options?: any): Promise<number>;
+			function removeAsync(selector: any): Promise<number>;
+			function find(selector?: any, options?: any): any;
+		}
+		function userId(): string | null;
+		function user(): User | null;
+		function publish(name: string, func: Function): void;
+		function loginWithGoogle(options: { requestPermissions?: string[]; loginStyle?: string }, callback?: (error?: any) => void): void;
+		function loginWithPassword(email: string, password: string, callback?: (error?: any) => void): void;
+		function logout(callback?: (error?: any) => void): void;
+		function loggingIn(): boolean;
 	}
 	export namespace Subscription {
 		function ready(): boolean;
@@ -42,6 +63,47 @@ declare module 'meteor/mongo' {
 
 declare module 'meteor/check' {
 	export function check(value: any, pattern: any): void;
+	export namespace Match {
+		const Optional: (pattern: any) => any;
+	}
+}
+
+declare module 'meteor/accounts-base' {
+	export namespace Accounts {
+		function config(options: {
+			sendVerificationEmail?: boolean;
+			forbidClientAccountCreation?: boolean;
+			loginExpirationInDays?: number;
+		}): void;
+		function onCreateUser(func: (options: any, user: any) => any): void;
+		function setPasswordAsync(userId: string, newPassword: string): Promise<void>;
+		function _checkPasswordAsync(user: any, password: string): Promise<{ error?: any }>;
+	}
+}
+
+declare module 'meteor/ddp-rate-limiter' {
+	export namespace DDPRateLimiter {
+		function addRule(
+			matcher: { type: string; name: string | ((name: string) => boolean) },
+			numRequests: number,
+			timeInterval: number,
+		): void;
+	}
+}
+
+declare module 'meteor/tracker' {
+	export namespace Tracker {
+		function nonreactive<T>(func: () => T): T;
+	}
+}
+
+declare module 'meteor/service-configuration' {
+	export namespace ServiceConfiguration {
+		const configurations: {
+			upsert(selector: any, modifier: any): void;
+			upsertAsync(selector: any, modifier: any): Promise<void>;
+		};
+	}
 }
 
 // Declare minimal Mongo namespace to satisfy Collection generic reference when types not available.

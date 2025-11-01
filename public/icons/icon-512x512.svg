@@ -1,15 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-	<!-- Purple gradient for dollar sign -->
+	<!-- Purple gradient background -->
 	<defs>
-		<linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-			<stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-			<stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+		<linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" style="stop-color:#9D9CF0;stop-opacity:1" />
+			<stop offset="100%" style="stop-color:#5A59C0;stop-opacity:1" />
 		</linearGradient>
 	</defs>
 	
-	<!-- White background -->
-	<rect width="512" height="512" fill="white" rx="102"/>
+	<!-- Rounded square background with purple gradient -->
+	<rect width="512" height="512" fill="url(#bgGradient)" rx="112"/>
 	
-	<!-- Purple dollar sign -->
-	<text x="256" y="400" font-family="Arial, sans-serif" font-size="460" font-weight="900" fill="url(#purpleGradient)" text-anchor="middle" font-stretch="expanded">$</text>
+	<!-- Bootstrap bi-receipt icon in white, scaled bigger and centered -->
+	<g transform="translate(113, 123) scale(17.8)">
+		<path fill="white" d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27m.217 1.338L2 2.118v11.764l.137.274.51-.51a.5.5 0 0 1 .707 0l.646.647.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.509.509.137-.274V2.118l-.137-.274-.51.51a.5.5 0 0 1-.707 0L12 1.707l-.646.647a.5.5 0 0 1-.708 0L10 1.707l-.646.647a.5.5 0 0 1-.708 0L8 1.707l-.646.647a.5.5 0 0 1-.708 0L6 1.707l-.646.647a.5.5 0 0 1-.708 0L4 1.707l-.646.647a.5.5 0 0 1-.708 0z"/>
+		<path fill="white" d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/>
+		<!-- Price dots on the right -->
+		<circle fill="white" cx="11.5" cy="4.5" r="0.7"/>
+		<circle fill="white" cx="11.5" cy="6.5" r="0.7"/>
+		<circle fill="white" cx="11.5" cy="8.5" r="0.7"/>
+		<circle fill="white" cx="11.5" cy="10.5" r="0.7"/>
+		<circle fill="white" cx="11.5" cy="12.5" r="0.7"/>
+	</g>
 </svg>

@@ -10,6 +10,29 @@ import { extractReceiptWithGemini, isGeminiAvailable } from './geminiOcr';
  */
 export const Bills = new (Mongo as any).Collection('bills');
 
+/**
+ * Verify that the current user owns the specified bill
+ * @param billId - ID of the bill to check
+ * @param userId - ID of the current user
+ * @throws Meteor.Error if not authorized or bill not found
+ */
+async function verifyBillOwnership(billId: string, userId: string | null) {
+	if (!userId) {
+		throw new Meteor.Error('not-authorized', 'You must be logged in');
+	}
+
+	const bill = await Bills.findOneAsync(billId);
+	if (!bill) {
+		throw new Meteor.Error('not-found', 'Bill not found');
+	}
+
+	if ((bill as any).userId && (bill as any).userId !== userId) {
+		throw new Meteor.Error('not-authorized', 'You can only modify your own bills');
+	}
+
+	return bill;
+}
+
 Meteor.methods({
 	/**
 	 * Insert a new bill into the database
@@ -18,6 +41,11 @@ Meteor.methods({
 	 */
 	async 'bills.insert'(bill: BillDoc) {
 		check(bill, Object);
+
+		// Require authentication
+		if (!this.userId) {
+			throw new Meteor.Error('not-authorized', 'You must be logged in to create bills');
+		}
 
 		// Sanitize and validate input
 		if (!Array.isArray(bill.users)) { bill.users = []; }
@@ -30,7 +58,13 @@ Meteor.methods({
 			throw new Meteor.Error('invalid-storeName', 'Store name must be a string');
 		}
 
-		return await Bills.insertAsync(bill);
+		// Add userId to bill for ownership
+		const billWithOwner = {
+			...bill,
+			userId: this.userId,
+		};
+
+		return await Bills.insertAsync(billWithOwner);
 	},
 
 	/**
@@ -42,6 +76,11 @@ Meteor.methods({
 		check(billId, String);
 		check(user, Object);
 
+		// Require authentication
+		if (!this.userId) {
+			throw new Meteor.Error('not-authorized', 'You must be logged in');
+		}
+
 		// Validate user data
 		if (!user.name?.trim()) {
 			throw new Meteor.Error('invalid-user', 'User name required');
@@ -50,6 +89,11 @@ Meteor.methods({
 		const existing = await Bills.findOneAsync(billId);
 		if (!existing) {
 			throw new Meteor.Error('not-found', 'Bill not found');
+		}
+
+		// Verify ownership
+		if ((existing as any).userId !== this.userId) {
+			throw new Meteor.Error('not-authorized', 'You can only modify your own bills');
 		}
 
 		// Check for duplicate user name (case-insensitive)
@@ -89,10 +133,7 @@ Meteor.methods({
 		check(billId, String);
 		check(userId, String);
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		const existing = await verifyBillOwnership(billId, this.userId);
 
 		// Remove user from bill and all items
 		await Bills.updateAsync(billId, {
@@ -127,10 +168,7 @@ Meteor.methods({
 			throw new Meteor.Error('invalid-price', 'Item price must be greater than zero');
 		}
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		await verifyBillOwnership(billId, this.userId);
 
 		// Sanitize item name and price
 		const sanitizedItem = {
@@ -154,10 +192,7 @@ Meteor.methods({
 		check(billId, String);
 		check(itemId, String);
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		const existing = await verifyBillOwnership(billId, this.userId);
 
 		await Bills.updateAsync(billId, {
 			$set: {
@@ -174,10 +209,7 @@ Meteor.methods({
 	async 'bills.remove'(billId: string) {
 		check(billId, String);
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		await verifyBillOwnership(billId, this.userId);
 
 		await Bills.removeAsync(billId);
 	},
@@ -191,10 +223,7 @@ Meteor.methods({
 		check(billId, String);
 		check(items, Array);
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		await verifyBillOwnership(billId, this.userId);
 
 		// Validate and sanitize all items
 		const sanitizedItems = items.map(item => ({
@@ -224,10 +253,7 @@ Meteor.methods({
 			throw new Meteor.Error('invalid-tax', 'Tax amount cannot be negative');
 		}
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		await verifyBillOwnership(billId, this.userId);
 
 		await Bills.updateAsync(billId, {
 			$set: {
@@ -248,10 +274,7 @@ Meteor.methods({
 		check(itemId, String);
 		check(userId, String);
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		const existing = await verifyBillOwnership(billId, this.userId);
 
 		const item = existing.items.find((i: Item) => i.id === itemId);
 		if (!item) {
@@ -288,12 +311,19 @@ Meteor.methods({
 		check(userId, String);
 		check(newName, String);
 
+		if (!this.userId) {
+			throw new Meteor.Error('not-authorized', 'You must be logged in');
+		}
+
 		if (!newName.trim()) {
 			throw new Meteor.Error('invalid-name', 'User name cannot be empty');
 		}
 
-		// Update all bills containing this user id
-		const cursor = Bills.find({ 'users.id': userId });
+		// Update all bills owned by current user containing this user id
+		const cursor = Bills.find({
+			'users.id': userId,
+			userId: this.userId, // Only update current user's bills
+		});
 		const bills = await cursor.fetchAsync();
 
 		for (const bill of bills) {
@@ -332,10 +362,7 @@ Meteor.methods({
 			return 0; // Client simulation - return 0 items
 		}
 
-		const existing = await Bills.findOneAsync(billId);
-		if (!existing) {
-			throw new Meteor.Error('not-found', 'Bill not found');
-		}
+		const existing = await verifyBillOwnership(billId, this.userId);
 
 		// Use Gemini AI for extraction
 		if (!isGeminiAvailable()) {

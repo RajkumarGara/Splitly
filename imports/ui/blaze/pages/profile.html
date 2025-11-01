@@ -1,0 +1,161 @@
+<template name="Profile">
+	<h2 class="page-title">
+		<i class="bi bi-person-circle"></i>
+		Account
+	</h2>
+	<div class="row justify-content-center">
+		<div class="col-12 col-md-8 col-lg-6">
+			
+			{{#if loading}}
+				<div class="text-center py-5">
+					<div class="spinner-border text-purple" role="status">
+						<span class="visually-hidden">Loading profile...</span>
+					</div>
+				</div>
+			{{else}}
+				<!-- Profile Section -->
+				<div class="card shadow-sm mb-3">
+					<div class="card-body">
+						{{#if editingProfile}}
+							<form id="profileForm">
+								<h5 class="mb-3"><i class="bi bi-person-badge"></i> Profile Information</h5>
+								{{#if hasGoogleAvatar}}
+									<div class="mb-3 text-center">
+										<img src="{{profile.avatar}}" alt="Profile Avatar" class="rounded-circle" style="width: 80px; height: 80px;">
+										<p class="text-muted small mt-2">Avatar from Google</p>
+									</div>
+								{{/if}}
+								<div class="mb-3">
+									<label for="displayName" class="form-label">Display Name</label>
+									<input type="text" class="form-control" id="displayName" value="{{profile.displayName}}" maxlength="50">
+								</div>
+								<div class="mb-3">
+									<label for="firstName" class="form-label">First Name</label>
+									<input type="text" class="form-control" id="firstName" value="{{profile.firstName}}" maxlength="50">
+								</div>
+								<div class="mb-3">
+									<label for="lastName" class="form-label">Last Name</label>
+									<input type="text" class="form-control" id="lastName" value="{{profile.lastName}}" maxlength="50">
+								</div>
+								<div class="mb-3">
+									<label for="bio" class="form-label">Bio</label>
+									<textarea class="form-control" id="bio" rows="3" maxlength="500">{{profile.bio}}</textarea>
+									<div class="form-text">Tell us a bit about yourself</div>
+								</div>
+								<div class="d-flex gap-2">
+									<button type="submit" class="btn btn-purple" id="saveProfileBtn">
+										Save Changes
+									</button>
+									<button type="button" class="btn btn-outline-secondary" id="cancelEditBtn">
+										Cancel
+									</button>
+								</div>
+							</form>
+						{{else}}
+							<div class="d-flex justify-content-between align-items-start mb-3">
+								<h5 class="mb-0"><i class="bi bi-person-badge"></i> Profile Information</h5>
+								<button class="btn btn-sm btn-outline-primary" id="editProfileBtn">
+									Edit
+								</button>
+							</div>
+							{{#if hasGoogleAvatar}}
+								<div class="mb-3 text-center">
+									<img src="{{profile.avatar}}" alt="Profile Avatar" class="rounded-circle" style="width: 100px; height: 100px;">
+									<p class="text-muted small mt-2">Avatar from Google</p>
+								</div>
+							{{/if}}
+							<div class="mb-2 d-flex">
+								<strong class="me-2" style="min-width: 120px;">Display Name:</strong>
+								<span class="text-muted">{{profile.displayName}}</span>
+							</div>
+							<div class="mb-2 d-flex">
+								<strong class="me-2" style="min-width: 120px;">First Name:</strong>
+								<span class="text-muted">{{profile.firstName}}</span>
+							</div>
+							<div class="mb-2 d-flex">
+								<strong class="me-2" style="min-width: 120px;">Last Name:</strong>
+								<span class="text-muted">{{profile.lastName}}</span>
+							</div>
+							<div class="mb-0 d-flex">
+								<strong class="me-2" style="min-width: 120px;">Bio:</strong>
+								<span class="text-muted">{{profile.bio}}</span>
+							</div>
+						{{/if}}
+					</div>
+				</div>
+
+				<!-- Account Information -->
+				<div class="card shadow-sm mb-3">
+					<div class="card-body">
+						<h5 class="mb-3"><i class="bi bi-envelope"></i> Account Information</h5>
+						<div class="mb-2 d-flex">
+							<strong class="me-2" style="min-width: 120px;">Email:</strong>
+							<span class="text-muted text-break">{{email}}</span>
+						</div>
+						<div class="mb-0 d-flex">
+							<strong class="me-2" style="min-width: 120px;">Member Since:</strong>
+							<span class="text-muted">{{formatDate createdAt}}</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Security Section -->
+				<div class="card shadow-sm mb-3">
+					<div class="card-body">
+						{{#if changingPassword}}
+							<form id="passwordForm">
+								<h5 class="mb-3"><i class="bi bi-shield-lock"></i> Change Password</h5>
+								<div class="mb-3">
+									<label for="currentPassword" class="form-label">Current Password</label>
+									<input type="password" class="form-control" id="currentPassword" required autocomplete="current-password">
+								</div>
+								<div class="mb-3">
+									<label for="newPassword" class="form-label">New Password</label>
+									<input type="password" class="form-control" id="newPassword" required minlength="8" autocomplete="new-password">
+									<div class="form-text">At least 8 characters</div>
+								</div>
+								<div class="mb-3">
+									<label for="confirmPassword" class="form-label">Confirm New Password</label>
+									<input type="password" class="form-control" id="confirmPassword" required minlength="8" autocomplete="new-password">
+								</div>
+								<div class="d-flex gap-2">
+									<button type="submit" class="btn btn-purple" id="savePasswordBtn">
+										Update Password
+									</button>
+									<button type="button" class="btn btn-outline-secondary" id="cancelPasswordBtn">
+										Cancel
+									</button>
+								</div>
+							</form>
+						{{else}}
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<h5 class="mb-1"><i class="bi bi-shield-lock"></i> Password</h5>
+									<p class="text-muted small mb-0">Change your password to keep your account secure</p>
+								</div>
+								<button class="btn btn-sm btn-outline-primary" id="changePasswordBtn">
+									Change
+								</button>
+							</div>
+						{{/if}}
+					</div>
+				</div>
+
+				<!-- Delete Account Section -->
+				<div class="card shadow-sm mb-3">
+					<div class="card-body">
+						<div class="d-flex justify-content-between align-items-start">
+							<div>
+								<h5 class="mb-1 text-danger"><i class="bi bi-trash"></i> Delete Account</h5>
+								<p class="text-muted small mb-0">Permanently delete your account and all associated data</p>
+							</div>
+							<button class="btn btn-sm btn-outline-danger" id="deleteAccountBtn">
+								Delete
+							</button>
+						</div>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+	</div>
+</template>
