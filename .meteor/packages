@@ -16,3 +16,7 @@ standard-minifier-js
 shell-server
 dynamic-import
 underscore
+accounts-password
+accounts-ui
+accounts-google
+service-configuration

@@ -1,5 +1,6 @@
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
+import { Meteor } from 'meteor/meteor';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
 import { Bills } from '/imports/api/models';
 import { cacheBills, loadCachedBills } from '/imports/infra/indexedDb';
@@ -225,12 +226,55 @@ Template.MainLayout.helpers({
 	alerts() {
 		return alertsVar.get();
 	},
+	currentUser() {
+		return Meteor.user();
+	},
+	isGuestUser() {
+		const user = Meteor.user();
+		return user?.profile?.isGuest === true;
+	},
+	userInitial() {
+		const user = Meteor.user();
+		const displayName = user?.profile?.displayName || user?.emails?.[0]?.address || 'U';
+		return displayName.charAt(0).toUpperCase();
+	},
+	userDisplayName() {
+		const user = Meteor.user();
+		return user?.profile?.displayName || user?.emails?.[0]?.address?.split('@')[0] || 'User';
+	},
+	userDisplayNameOrEmail() {
+		const user = Meteor.user();
+		// For guest accounts or users with displayName, show displayName
+		if (user?.profile?.displayName) {
+			return user.profile.displayName;
+		}
+		// Otherwise show email
+		return user?.emails?.[0]?.address || 'User';
+	},
+	userEmail() {
+		const user = Meteor.user();
+		return user?.emails?.[0]?.address || '';
+	},
 });
 
 Template.Alerts.events({
 	'click .btn-close'(e) {
 		const id = e.currentTarget.getAttribute('data-id');
 		alertsVar.set(alertsVar.get().filter(a => a.id !== id));
+	},
+});
+
+Template.MainLayout.events({
+	'click #headerLogoutBtn, click #topNavLogoutBtn'(e) {
+		e.preventDefault();
+		Meteor.logout((error) => {
+			if (error) {
+				pushAlert('error', 'Logout failed');
+			} else {
+				pushAlert('success', 'Logged out successfully');
+				FlowRouter.go('/login');
+			}
+		});
 	},
 });
 

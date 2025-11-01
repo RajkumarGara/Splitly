@@ -57,6 +57,7 @@ export interface Item {
  */
 export interface BillDoc {
 	_id?: string;
+	userId?: string; // Owner of the bill
 	createdAt: Date;
 	updatedAt?: Date;
 	date?: string; // Receipt date from OCR

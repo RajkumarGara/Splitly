@@ -1,6 +1,9 @@
 /* eslint-env browser */
 import './settings.html';
 import { Template } from 'meteor/templating';
+import { Meteor } from 'meteor/meteor';
+import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
+import { pushAlert } from '/imports/ui/blaze/layout';
 import config from '/config/app.config.json';
 
 function getFlag(name, def) {
@@ -23,6 +26,22 @@ function applyTheme(theme) {
 }
 
 Template.Settings.helpers({
+	currentUser() {
+		return Meteor.user();
+	},
+	userEmail() {
+		const user = Meteor.user();
+		return user?.emails?.[0]?.address || '';
+	},
+	userDisplayNameOrEmail() {
+		const user = Meteor.user();
+		// For guest accounts or users with displayName, show displayName
+		if (user?.profile?.displayName) {
+			return user.profile.displayName;
+		}
+		// Otherwise show email
+		return user?.emails?.[0]?.address || 'User';
+	},
 	isThemeLight() {
 		return getTheme() === 'light';
 	},
@@ -55,6 +74,17 @@ Template.Settings.events({
 	},
 	'change #indexedSwitch'(e) {
 		localStorage.setItem('flag_indexedDbSync', e.currentTarget.checked);
+	},
+	'click #logoutSettingsBtn'(e) {
+		e.preventDefault();
+		Meteor.logout((error) => {
+			if (error) {
+				pushAlert('error', 'Logout failed');
+			} else {
+				pushAlert('success', 'Logged out successfully');
+				FlowRouter.go('/login');
+			}
+		});
 	},
 });
 

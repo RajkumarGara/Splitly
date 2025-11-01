@@ -1,8 +1,43 @@
 <template name="MainLayout">
 	{{> Alerts}}
+	
+	<!-- Universal Header with Avatar -->
+	<header class="app-header" role="banner">
+		<div class="app-header-inner">
+			<div class="header-brand">
+				<i class="bi bi-receipt-cutoff"></i>
+				<span class="brand-text">Splitly</span>
+			</div>
+			{{#if currentUser}}
+				<div class="header-user-menu">
+					<div class="dropdown">
+						<button class="avatar-button" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="User menu">
+							<div class="avatar-circle">
+								<span class="avatar-initial">{{userInitial}}</span>
+							</div>
+						</button>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="avatarDropdown">
+							{{#unless isGuestUser}}
+								<li><h6 class="dropdown-header">{{userDisplayNameOrEmail}}</h6></li>
+								<li><hr class="dropdown-divider"></li>
+							{{/unless}}
+							<li><a class="dropdown-item" href="/settings"><i class="bi bi-person"></i> Account</a></li>
+							<li><hr class="dropdown-divider"></li>
+							<li><a class="dropdown-item text-danger" href="#" id="headerLogoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+						</ul>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+	</header>
+	
 	<!-- Top Navigation (desktop/tablet) -->
-	<header class="top-nav" role="navigation" aria-label="Primary">
-		<nav class="top-nav-inner">
+	<nav class="top-nav" role="navigation" aria-label="Primary">
+		<div class="top-nav-inner">
+			<div class="top-nav-brand">
+				<i class="bi bi-receipt-cutoff"></i>
+				<span class="brand-text">Splitly</span>
+			</div>
 			<ul class="top-nav-list">
 				{{#each navItems}}
 					<li class="top-nav-item {{isActive path}}">
@@ -13,8 +48,28 @@
 					</li>
 				{{/each}}
 			</ul>
-		</nav>
-	</header>
+			{{#if currentUser}}
+				<div class="top-nav-user">
+					<div class="dropdown">
+						<button class="avatar-button" type="button" id="topNavAvatarDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="User menu">
+							<div class="avatar-circle">
+								<span class="avatar-initial">{{userInitial}}</span>
+							</div>
+						</button>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="topNavAvatarDropdown">
+							{{#unless isGuestUser}}
+								<li><h6 class="dropdown-header">{{userDisplayNameOrEmail}}</h6></li>
+								<li><hr class="dropdown-divider"></li>
+							{{/unless}}
+							<li><a class="dropdown-item" href="/settings"><i class="bi bi-person"></i> Account</a></li>
+							<li><hr class="dropdown-divider"></li>
+							<li><a class="dropdown-item text-danger" href="#" id="topNavLogoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+						</ul>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+	</nav>
 
 	<div class="container pb-5 pb-lg-4">
 		{{#if notReady}}
