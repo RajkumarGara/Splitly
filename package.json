@@ -7,10 +7,11 @@
     "start": "meteor run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "meteor build ../output --directory",
-    "build:render": "meteor build ../build --directory --server-only && cd ../build/bundle/programs/server && npm install --production",
+    "build": "npm run update-cache && meteor build ../output --directory",
+    "build:render": "npm run update-cache && meteor build ../build --directory --server-only && cd ../build/bundle/programs/server && npm install --production",
     "dev": "meteor run",
-    "deploy": "meteor deploy splitly.meteorapp.com"
+    "deploy": "meteor deploy splitly.meteorapp.com",
+    "update-cache": "node scripts/update-cache-version.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",

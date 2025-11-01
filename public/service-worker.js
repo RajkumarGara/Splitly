@@ -1,8 +1,9 @@
 /* eslint-env serviceworker */
-/* global self, caches, fetch, Response, Headers */
+/* global self, fetch, Response, Headers */
 
 // Splitly Service Worker - Handles offline caching and PWA functionality
-const CACHE_VERSION = 'v1';
+// IMPORTANT: Update CACHE_VERSION when deploying new code to invalidate old caches
+const CACHE_VERSION = 'v1.0.2'; // Change this version number on each deployment
 const CACHE_NAME = `splitly-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `splitly-runtime-${CACHE_VERSION}`;
 
@@ -33,10 +34,11 @@ self.addEventListener('activate', event => {
 	console.info('[SW] Activating service worker, version:', CACHE_VERSION);
 	event.waitUntil(
 		Promise.all([
-			// Clean up old caches
+			// Clean up ALL old caches - both static and runtime
 			caches.keys().then(cacheNames => {
 				const deletionPromises = cacheNames.map(cacheName => {
-					if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+					// Delete any cache that doesn't match current version
+					if (!cacheName.includes(CACHE_VERSION)) {
 						console.info('[SW] Deleting old cache:', cacheName);
 						return caches.delete(cacheName);
 					}
@@ -44,12 +46,24 @@ self.addEventListener('activate', event => {
 				return Promise.all(deletionPromises);
 			}),
 			// Take control of all clients immediately
-			self.clients.claim(),
+			// This ensures new SW handles all requests right away
+			self.clients.claim().then(() => {
+				console.info('[SW] Claimed all clients');
+				// Notify all clients about the new version
+				return self.clients.matchAll().then(clients => {
+					clients.forEach(client => {
+						client.postMessage({
+							type: 'SW_ACTIVATED',
+							version: CACHE_VERSION,
+						});
+					});
+				});
+			}),
 		]),
 	);
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event - network first for HTML, cache first for assets
 self.addEventListener('fetch', (event) => {
 	// Skip non-GET requests
 	if (event.request.method !== 'GET') {
@@ -61,11 +75,52 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
+	const url = new URL(event.request.url);
+
+	// Network-first strategy for HTML and API calls to always get fresh content
+	const isHtmlOrApi = event.request.headers.get('accept')?.includes('text/html') ||
+		url.pathname.startsWith('/api') ||
+		url.pathname.startsWith('/sockjs');
+
+	if (isHtmlOrApi) {
+		event.respondWith(
+			fetch(event.request)
+				.then(response => {
+					// Cache successful HTML responses
+					if (response && response.status === 200) {
+						const responseToCache = response.clone();
+						caches.open(RUNTIME_CACHE).then(cache => {
+							cache.put(event.request, responseToCache);
+						});
+					}
+					return response;
+				})
+				.catch(() => {
+					// Network failed, try cache
+					return caches.match(event.request).then(cachedResponse => {
+						if (cachedResponse) {
+							return cachedResponse;
+						}
+						// No cache either
+						return new Response('Offline - Please check your connection', {
+							status: 503,
+							statusText: 'Service Unavailable',
+							headers: new Headers({
+								'Content-Type': 'text/plain',
+							}),
+						});
+					});
+				}),
+		);
+		return;
+	}
+
+	// Cache-first strategy for static assets (CSS, JS, images, fonts)
 	event.respondWith(
 		caches.match(event.request).then((cachedResponse) => {
 			// Return cached response if found
 			if (cachedResponse) {
-				// Update cache in background
+				// Update cache in background for next time
 				fetch(event.request).then((response) => {
 					if (response && response.status === 200) {
 						caches.open(RUNTIME_CACHE).then((cache) => {
@@ -73,7 +128,7 @@ self.addEventListener('fetch', (event) => {
 						});
 					}
 				}).catch(() => {
-					// Network failed, but we have cache
+					// Network failed, but we have cache - no action needed
 				});
 				return cachedResponse;
 			}
@@ -96,7 +151,6 @@ self.addEventListener('fetch', (event) => {
 				return response;
 			}).catch(() => {
 				// Network failed and no cache
-				// Could return a custom offline page here
 				return new Response('Offline - Please check your connection', {
 					status: 503,
 					statusText: 'Service Unavailable',
@@ -114,7 +168,8 @@ self.addEventListener('message', (event) => {
 	if (!event.data) {return;}
 
 	if (event.data.type === 'SKIP_WAITING') {
-		console.info('[SW] Received SKIP_WAITING message, activating new version');
+		console.info('[SW] Received SKIP_WAITING message, activating new version immediately');
+		// Skip waiting and activate immediately
 		self.skipWaiting();
 	}
 
@@ -122,11 +177,15 @@ self.addEventListener('message', (event) => {
 		// Respond back to client with current cache version
 		try {
 			if (event.source) {
-				event.source.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
+				event.source.postMessage({
+					type: 'SW_VERSION',
+					version: CACHE_VERSION,
+				});
+				console.info('[SW] Sent version to client:', CACHE_VERSION);
 			}
 		} catch (err) {
-			// Silently ignore postMessage errors (client may have closed)
-			console.warn('[SW] Version message error:', err.message);
+			// Silently handle postMessage errors (client may have closed)
+			console.warn('[SW] Could not send version to client:', err.message);
 		}
 	}
 });
