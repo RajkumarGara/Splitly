@@ -164,9 +164,12 @@ body.modal-open .top-nav {
 }
 
 @keyframes pulse-icon {
-	0%, 100% {
+
+	0%,
+	100% {
 		transform: scale(1);
 	}
+
 	50% {
 		transform: scale(1.1);
 	}
@@ -259,23 +262,7 @@ body.modal-open .top-nav {
 	z-index: 1080;
 }
 
-.empty-state-icon {
-	font-size: 4rem;
-	color: var(--bs-gray-300);
-}
 
-[data-bs-theme="dark"] .empty-state-icon {
-	color: var(--bs-gray-700);
-}
-
-.empty-state-icon-muted {
-	font-size: 4rem;
-	color: var(--bs-gray-600);
-}
-
-[data-bs-theme="dark"] .empty-state-icon-muted {
-	color: var(--bs-gray-400);
-}
 
 .warning-icon-large {
 	font-size: 3rem;
@@ -317,7 +304,7 @@ body.modal-open .top-nav {
 	border-color: var(--bs-gray-800);
 }
 
-[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+[data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
 	color: var(--bs-gray-200);
 	background-color: rgba(255, 255, 255, 0.02);
 }
@@ -448,7 +435,7 @@ body.modal-open .top-nav {
 	color: var(--purple-dark);
 }
 
-.btn-check:checked + .btn-outline-primary {
+.btn-check:checked+.btn-outline-primary {
 	background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-secondary) 100%);
 	border-color: var(--purple-primary);
 	color: white;
@@ -456,12 +443,12 @@ body.modal-open .top-nav {
 }
 
 /* Light mode: inactive button (dark mode button) with light purple outline */
-.btn-check:not(:checked) + .btn-outline-primary {
+.btn-check:not(:checked)+.btn-outline-primary {
 	color: var(--purple-secondary);
 	border-color: var(--purple-secondary);
 }
 
-.btn-check:not(:checked) + .btn-outline-primary:hover {
+.btn-check:not(:checked)+.btn-outline-primary:hover {
 	background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
 	border-color: var(--purple-secondary);
 	color: var(--purple-dark);
@@ -479,7 +466,7 @@ body.modal-open .top-nav {
 	color: var(--purple-light);
 }
 
-[data-bs-theme="dark"] .btn-check:checked + .btn-outline-primary {
+[data-bs-theme="dark"] .btn-check:checked+.btn-outline-primary {
 	background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-light) 100%);
 	border-color: var(--purple-dark);
 	color: white;
@@ -487,12 +474,12 @@ body.modal-open .top-nav {
 }
 
 /* Dark mode: inactive button (light mode button) with purple */
-[data-bs-theme="dark"] .btn-check:not(:checked) + .btn-outline-primary {
+[data-bs-theme="dark"] .btn-check:not(:checked)+.btn-outline-primary {
 	color: var(--purple-dark);
 	border-color: var(--purple-dark);
 }
 
-[data-bs-theme="dark"] .btn-check:not(:checked) + .btn-outline-primary:hover {
+[data-bs-theme="dark"] .btn-check:not(:checked)+.btn-outline-primary:hover {
 	background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
 	border-color: var(--purple-dark);
 	color: var(--purple-light);
@@ -701,20 +688,20 @@ body.modal-open .top-nav {
 	.app-header-inner {
 		padding: 1rem 2rem;
 	}
-	
+
 	.header-brand {
 		font-size: 1.5rem;
 	}
-	
+
 	.header-brand i {
 		font-size: 1.75rem;
 	}
-	
+
 	.avatar-circle {
 		width: 44px;
 		height: 44px;
 	}
-	
+
 	.avatar-initial {
 		font-size: 1.125rem;
 	}
@@ -758,14 +745,16 @@ body.modal-open .top-nav {
 /* ================= Top Navigation (Desktop / Tablet) ================= */
 .top-nav {
 	position: sticky;
-	top: 0; /* Position at top since app header is hidden on desktop */
+	top: 0;
+	/* Position at top since app header is hidden on desktop */
 	z-index: 1020;
 	background: rgba(255, 255, 255, 0.98);
 	backdrop-filter: blur(20px) saturate(180%);
 	-webkit-backdrop-filter: blur(20px) saturate(180%);
 	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-	display: none; /* hidden on mobile, show on tablet+ */
+	display: none;
+	/* hidden on mobile, show on tablet+ */
 }
 
 @media (min-width: 768px) {
@@ -914,12 +903,14 @@ body.modal-open .top-nav {
 
 /* Show top nav and hide bottom nav from 768px upward */
 @media (min-width: 768px) {
-	.mobile-nav { 
-		display: none; 
+	.mobile-nav {
+		display: none;
 	}
-	body { 
-		padding-top: 0; /* No app header on desktop */
-		padding-bottom: 0; 
+
+	body {
+		padding-top: 0;
+		/* No app header on desktop */
+		padding-bottom: 0;
 	}
 
 	/* Hide page titles on desktop since top nav shows active page */
@@ -940,7 +931,7 @@ body.modal-open .top-nav {
 	.top-nav-list {
 		gap: 0.5rem;
 	}
-	
+
 	.app-header-inner {
 		padding: 1rem 2rem;
 	}
@@ -952,12 +943,12 @@ body.modal-open .top-nav {
 		padding: 0 2rem;
 		max-width: 1140px;
 	}
-	
+
 	.top-nav-link {
 		padding: 0.625rem 1.25rem;
 		font-size: 0.9375rem;
 	}
-	
+
 	.top-nav-list {
 		gap: 3.25rem;
 	}
@@ -969,12 +960,12 @@ body.modal-open .top-nav {
 		max-width: 1200px;
 		padding: 0 2.5rem;
 	}
-	
+
 	.top-nav-link {
 		padding: 0.75rem 1.5rem;
 		font-size: 0.9375rem;
 	}
-	
+
 	.top-nav-list {
 		gap: 3.25rem;
 	}
@@ -985,7 +976,7 @@ body.modal-open .top-nav {
 	.top-nav-inner {
 		max-width: 1320px;
 	}
-	
+
 	.top-nav-list {
 		gap: 3.25rem;
 	}
@@ -1006,11 +997,13 @@ body.modal-open .top-nav {
 	overflow-x: auto;
 	overflow-y: hidden;
 	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none; /* Firefox */
+	scrollbar-width: none;
+	/* Firefox */
 }
 
 .mobile-nav-container::-webkit-scrollbar {
-	display: none; /* Chrome, Safari */
+	display: none;
+	/* Chrome, Safari */
 }
 
 .mobile-nav-item {
@@ -1086,8 +1079,10 @@ body.modal-open .top-nav {
 
 /* Universal layout adjustments for bottom nav only */
 body {
-	padding-top: 60px; /* Space for app header on mobile */
-	padding-bottom: 60px; /* Space for mobile nav on mobile */
+	padding-top: 60px;
+	/* Space for app header on mobile */
+	padding-bottom: 60px;
+	/* Space for mobile nav on mobile */
 }
 
 /* Desktop - no body padding needed since header is hidden */
@@ -1160,6 +1155,7 @@ body {
 		opacity: 0;
 		transform: translateY(8px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1167,7 +1163,8 @@ body {
 }
 
 /* Specific page heading improvements */
-h1, h2 {
+h1,
+h2 {
 	margin-top: 0.5rem;
 	margin-bottom: 1.5rem;
 }
@@ -1185,45 +1182,46 @@ h1, h2 {
 		font-size: 0.65rem;
 		padding: 0.4rem 0.2rem;
 	}
-	
+
 	.mobile-nav-item i {
 		font-size: 1rem;
 		margin-bottom: 0.125rem;
 	}
-	
+
 	.mobile-nav-item span {
 		font-size: 0.65rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	
+
 	body {
 		padding-bottom: 90px;
 	}
-	
+
 	.mobile-nav {
 		padding: 0.25rem 0 1.25rem 0 !important;
 	}
-	
+
 	/* Adjust container padding for smaller screens */
 	.container {
 		padding-top: 0.75rem;
 		padding-left: 0.75rem;
 		padding-right: 0.75rem;
 	}
-	
+
 	/* Reduce header spacing on mobile for better space utilization */
-	h1, h2 {
+	h1,
+	h2 {
 		margin-top: 0.25rem;
 		margin-bottom: 1rem;
 		font-size: 1.5rem;
 	}
-	
+
 	.page-title {
 		font-size: 1.5rem;
 		margin-bottom: 1.5rem;
 	}
-	
+
 	.page-title i {
 		font-size: 1.5rem;
 	}
@@ -1235,7 +1233,7 @@ h1, h2 {
 		max-width: 700px;
 		padding: 0 2rem;
 	}
-	
+
 	.mobile-nav-item {
 		min-width: 100px;
 		width: 100px;
@@ -1249,7 +1247,7 @@ h1, h2 {
 		max-width: 800px;
 		padding: 0 3rem;
 	}
-	
+
 	.mobile-nav-item {
 		min-width: 120px;
 		width: 120px;
@@ -1272,4 +1270,3 @@ h1, h2 {
 .mobile-nav {
 	z-index: 1080 !important;
 }
-
