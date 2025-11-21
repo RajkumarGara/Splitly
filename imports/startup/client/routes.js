@@ -9,6 +9,7 @@ import '/imports/ui/blaze/pages/dashboard';
 import '/imports/ui/blaze/pages/splitPage';
 import '/imports/ui/blaze/pages/history';
 import '/imports/ui/blaze/pages/analysis';
+import '/imports/ui/blaze/pages/groceryList';
 import '/imports/ui/blaze/pages/settings';
 import '/imports/ui/blaze/pages/login';
 import '/imports/ui/blaze/pages/profile';
@@ -85,6 +86,12 @@ FlowRouter.route('/analysis', {
 	name: 'analysis',
 	triggersEnter: [requireAuth],
 	action() { render('Analysis'); },
+});
+
+FlowRouter.route('/groceries', {
+	name: 'groceries',
+	triggersEnter: [requireAuth],
+	action() { render('GroceryList'); },
 });
 
 FlowRouter.route('/settings', {

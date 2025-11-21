@@ -21,7 +21,8 @@
     "bootstrap-icons": "^1.13.1",
     "idb": "^7.1.1",
     "jquery": "^3.7.1",
-    "meteor-node-stubs": "^1.2.3"
+    "meteor-node-stubs": "^1.2.3",
+    "sortablejs": "^1.15.6"
   },
   "devDependencies": {
     "@eslint/js": "^8.57.0",

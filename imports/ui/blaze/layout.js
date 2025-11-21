@@ -198,7 +198,7 @@ Template.MainLayout.helpers({
 		}
 
 		// Don't show spinner during normal navigation between main pages
-		const isMainNavPage = ['/', '/history', '/analysis', '/settings'].includes(currentPath);
+		const isMainNavPage = ['/', '/groceries', '/history', '/analysis', '/settings'].includes(currentPath);
 		if (isMainNavPage && initialLoadState.get()) {
 			return false;
 		}
@@ -218,6 +218,7 @@ Template.MainLayout.helpers({
 	navItems() {
 		return [
 			{ label: 'Home', path: '/', icon: 'bi-house-door' },
+			{ label: 'Groceries', path: '/groceries', icon: 'bi-cart3' },
 			{ label: 'History', path: '/history', icon: 'bi-clock-history' },
 			{ label: 'Analysis', path: '/analysis', icon: 'bi-graph-up' },
 			{ label: 'Settings', path: '/settings', icon: 'bi-gear' },

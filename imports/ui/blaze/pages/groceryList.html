@@ -1,0 +1,122 @@
+<template name="GroceryList">
+	<div class="grocery-list-container">
+		<div class="grocery-header">
+			<h5 class="mb-0">
+				<i class="bi bi-cart3"></i> Grocery List
+			</h5>
+			<div class="header-actions">
+				{{#if hasCheckedItems}}
+					<button class="btn btn-sm btn-outline-danger" id="clearCheckedBtn" title="Clear checked items">
+						<i class="bi bi-trash"></i>
+					</button>
+				{{/if}}
+				<button class="btn btn-sm btn-primary" id="addStoreBtn">
+					<i class="bi bi-plus-lg"></i> Store
+				</button>
+			</div>
+		</div>
+
+		{{#if isLoading}}
+			<div class="text-center py-5">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Loading...</span>
+				</div>
+			</div>
+		{{else}}
+			{{#if hasStores}}
+				<div class="stores-container" id="storesContainer">
+					{{#each stores}}
+						<div class="store-card" data-store-id="{{id}}">
+							<div class="store-header">
+								<div class="store-drag-handle">
+									<i class="bi bi-grip-vertical"></i>
+								</div>
+								<h6 class="store-name" data-store-id="{{id}}">{{name}}</h6>
+								<div class="store-actions">
+									<button class="btn btn-sm btn-link text-primary p-0 rename-store-btn" data-store-id="{{id}}" title="Rename">
+										<i class="bi bi-pencil"></i>
+									</button>
+									<button class="btn btn-sm btn-link text-danger p-0 remove-store-btn" data-store-id="{{id}}" title="Remove store">
+										<i class="bi bi-x-lg"></i>
+									</button>
+								</div>
+							</div>
+
+							<div class="items-container" data-store-id="{{id}}">
+								{{#each items}}
+									<div class="grocery-item {{checkedClass}}" data-item-id="{{id}}" data-store-id="{{../id}}">
+										<div class="item-drag-handle">
+											<i class="bi bi-grip-horizontal"></i>
+										</div>
+										<div class="item-checkbox">
+											<input type="checkbox" class="item-check" data-item-id="{{id}}" data-store-id="{{../id}}" data-checked="{{checked}}">
+										</div>
+										<div class="item-name">{{name}}</div>
+										<button class="btn btn-sm btn-link text-danger p-0 remove-item-btn" data-item-id="{{id}}" data-store-id="{{../id}}">
+											<i class="bi bi-x-lg"></i>
+										</button>
+									</div>
+								{{/each}}
+							</div>
+
+							<div class="add-item-form">
+								<input 
+									type="text" 
+									class="form-control form-control-sm add-item-input" 
+									placeholder="Add item..." 
+									data-store-id="{{id}}"
+								>
+							</div>
+						</div>
+					{{/each}}
+				</div>
+			{{else}}
+				<div class="empty-state">
+					<i class="bi bi-cart-x"></i>
+					<p>No stores yet</p>
+					<button class="btn btn-primary" id="addFirstStoreBtn">
+						<i class="bi bi-plus-lg"></i> Add Your First Store
+					</button>
+				</div>
+			{{/if}}
+		{{/if}}
+	</div>
+
+	<!-- Add Store Modal -->
+	<div class="modal fade" id="addStoreModal" tabindex="-1" style="z-index: 1060;">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Add Store</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<input type="text" class="form-control" id="storeNameInput" placeholder="Store name (e.g., Walmart, Costco)">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" id="saveStoreBtn">Add Store</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Rename Store Modal -->
+	<div class="modal fade" id="renameStoreModal" tabindex="-1" style="z-index: 1060;">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Rename Store</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<input type="text" class="form-control" id="renameStoreInput" placeholder="New store name">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" id="saveRenameBtn">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</template>
