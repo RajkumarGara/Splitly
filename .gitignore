@@ -41,6 +41,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Lock files (Meteor manages dependencies)
+package-lock.json
+
 # Meteor local build artifacts
 .meteor/local
 

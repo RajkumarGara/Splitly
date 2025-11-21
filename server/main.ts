@@ -38,6 +38,7 @@ if (Meteor.isServer) {
 require('/imports/api/bills');
 require('/imports/api/users');
 require('/imports/api/accounts');
+require('/imports/api/groceries');
 require('/imports/api/publications');
 
 // Configure security headers

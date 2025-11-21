@@ -1,0 +1,359 @@
+.grocery-list-container {
+	padding: 0.75rem;
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+.grocery-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1rem;
+	padding: 0.5rem 0;
+}
+
+.grocery-header h5 {
+	font-size: 1.1rem;
+	font-weight: 600;
+}
+
+.header-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.stores-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.store-card {
+	background: white;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.store-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 0.75rem;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+}
+
+.store-card:nth-child(2n) .store-header {
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.store-card:nth-child(3n) .store-header {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.store-card:nth-child(4n) .store-header {
+	background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.store-card:nth-child(5n) .store-header {
+	background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.store-drag-handle {
+	cursor: grab;
+	display: flex;
+	align-items: center;
+	opacity: 0.8;
+	font-size: 1rem;
+	color: rgba(255, 255, 255, 0.9);
+	padding: 0.25rem;
+	margin: -0.25rem;
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.store-drag-handle:active {
+	cursor: grabbing;
+	opacity: 1;
+}
+
+.store-name {
+	flex: 1;
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.store-actions {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.store-actions .btn-link {
+	color: white;
+	font-size: 0.9rem;
+	padding: 0.25rem;
+	line-height: 1;
+	transition: all 0.2s;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+	opacity: 0.95;
+}
+
+.store-actions .btn-link:hover {
+	color: white;
+	transform: scale(1.15);
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+	opacity: 1;
+}
+
+.items-container {
+	min-height: 2rem;
+}
+
+.grocery-item {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+	transition: all 0.2s;
+	background-color: white;
+}
+
+.grocery-item:hover {
+	background-color: rgba(102, 126, 234, 0.04);
+}
+
+.grocery-item.checked {
+	opacity: 0.6;
+	background-color: rgba(0, 0, 0, 0.02);
+}
+
+.grocery-item.checked .item-name {
+	text-decoration: line-through;
+	color: #999;
+}
+
+.item-drag-handle {
+	cursor: grab;
+	display: flex;
+	align-items: center;
+	color: #bbb;
+	font-size: 0.9rem;
+	transition: color 0.2s;
+	padding: 0.25rem;
+	margin: -0.25rem;
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.grocery-item:hover .item-drag-handle {
+	color: #667eea;
+}
+
+.item-drag-handle:active {
+	cursor: grabbing;
+	color: #667eea;
+}
+
+.item-checkbox {
+	display: flex;
+	align-items: center;
+}
+
+.item-checkbox input[type="checkbox"] {
+	width: 1.1rem;
+	height: 1.1rem;
+	cursor: pointer;
+	margin: 0;
+}
+
+.item-name {
+	flex: 1;
+	font-size: 0.9rem;
+	line-height: 1.3;
+	color: #2c3e50;
+}
+
+.remove-item-btn {
+	opacity: 0.5;
+	transition: opacity 0.2s;
+	font-size: 0.8rem;
+	color: #e74c3c;
+}
+
+.grocery-item:hover .remove-item-btn {
+	opacity: 1;
+}
+
+.add-item-form {
+	padding: 0.6rem 0.75rem;
+	background-color: #f8f9fc;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.add-item-input {
+	border: 1px solid #e0e4e9;
+	font-size: 0.85rem;
+	padding: 0.5rem 0.7rem;
+	background-color: white;
+	transition: all 0.2s;
+}
+
+.add-item-input:focus {
+	border-color: #667eea;
+	box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.1);
+	background-color: white;
+}
+
+.empty-state {
+	text-align: center;
+	padding: 3rem 1rem;
+	color: #8e9aaf;
+}
+
+.empty-state i {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+	display: block;
+	color: #b8c5d6;
+}
+
+.empty-state p {
+	font-size: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+[data-bs-theme="dark"] .empty-state {
+	color: #7a7d8c;
+}
+
+[data-bs-theme="dark"] .empty-state i {
+	color: #5a5d70;
+}
+
+/* Sortable styles */
+.sortable-ghost {
+	opacity: 0.4;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .store-card {
+	background: #2b2d42;
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .grocery-item {
+	background-color: #2b2d42;
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .item-name {
+	color: #e8eaf0;
+}
+
+[data-bs-theme="dark"] .grocery-item.checked .item-name {
+	color: #7a7d8c;
+}
+
+[data-bs-theme="dark"] .grocery-item:hover {
+	background-color: rgba(102, 126, 234, 0.15);
+}
+
+[data-bs-theme="dark"] .grocery-item.checked {
+	background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-bs-theme="dark"] .item-drag-handle {
+	color: #5a5d70;
+}
+
+[data-bs-theme="dark"] .grocery-item:hover .item-drag-handle {
+	color: #8b9dea;
+}
+
+[data-bs-theme="dark"] .remove-item-btn {
+	color: #ff6b6b;
+}
+
+[data-bs-theme="dark"] .add-item-form {
+	background-color: rgba(0, 0, 0, 0.2);
+	border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .add-item-input {
+	background-color: #1a1d2e;
+	border-color: rgba(255, 255, 255, 0.15);
+	color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .add-item-input:focus {
+	border-color: #8b9dea;
+	box-shadow: 0 0 0 0.2rem rgba(139, 157, 234, 0.15);
+	background-color: #242738;
+}
+
+/* Modal z-index fix for Bootstrap stacking issue */
+#addStoreModal,
+#renameStoreModal {
+	z-index: 1060 !important;
+}
+
+/* Compact mobile optimizations */
+@media (max-width: 576px) {
+	.grocery-list-container {
+		padding: 0.5rem;
+	}
+
+	.grocery-header h5 {
+		font-size: 1rem;
+	}
+
+	.store-card {
+		border-radius: 6px;
+	}
+
+	.store-header {
+		padding: 0.4rem 0.6rem;
+	}
+
+	.store-name {
+		font-size: 0.9rem;
+	}
+
+	.grocery-item {
+		padding: 0.4rem 0.6rem;
+	}
+
+	.item-name {
+		font-size: 0.85rem;
+	}
+
+	.add-item-form {
+		padding: 0.4rem 0.6rem;
+	}
+
+	.add-item-input {
+		font-size: 0.8rem;
+		padding: 0.35rem 0.5rem;
+	}
+
+	/* Larger touch targets for mobile drag handles */
+	.store-drag-handle {
+		font-size: 1.2rem;
+		padding: 0.4rem;
+		margin: -0.4rem -0.4rem -0.4rem 0;
+	}
+
+	.item-drag-handle {
+		font-size: 1rem;
+		padding: 0.4rem;
+		margin: -0.4rem -0.4rem -0.4rem 0;
+	}
+}

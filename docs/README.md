@@ -71,6 +71,12 @@ Welcome to the Splitly documentation! This directory contains comprehensive guid
    - Installation guide
    - Cache management
 
+10. **[Grocery List](./grocery-list.md)** - Shopping list management feature
+   - Store organization
+   - Quick add/remove items
+   - Drag-and-drop sorting
+   - Mobile-first UX
+
 ---
 
 ## 🚀 Quick Start
@@ -111,6 +117,9 @@ New to Splitly? Start here:
 
 **Enable offline mode**
 → [Offline Support](./offline-support.md#indexeddb-caching)
+
+**Create a grocery list**
+→ [Grocery List](./grocery-list.md)
 
 ---
 
